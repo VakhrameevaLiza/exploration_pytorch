@@ -6,11 +6,11 @@ from tensorboardX import SummaryWriter
 import numpy as np
 import copy
 from helpers.replay_buffer import ReplayBuffer, CountBasedReplayBuffer
-from helpers.chain_environment import SimpleChain
 from helpers.shedules import LinearSchedule
 from helpers.plots import plot_q_func_and_visitations,plot_q_func_and_visitations_and_policy
 from helpers.create_empty_directory import create_empty_directory
 
+from tabular_environments.chain_environment import SimpleChain
 
 batch_size = 32
 
@@ -325,7 +325,8 @@ def train(env,
           count_based_exploration_type='state_action',
           act_type='epsilon_greedy',
           target_type='standard',
-          reward_shaping_type=None
+          reward_shaping_type=None,
+          do_pretraining=False
           ):
 
     if seed:
@@ -357,9 +358,9 @@ def train(env,
 
     # define models
     model = DQNnet(num_actions, dim_states)
-
-    pretrain(model, env.get_all_states(), num_actions,
-             eps=1e-5, max_steps=int(1e3), writer=writer)
+    if do_pretraining:
+        pretrain(model, env.get_all_states(), num_actions,
+                 eps=1e-5, max_steps=int(1e3), writer=writer)
     target_model = copy.deepcopy(model)
     exploration_model = DQNnet(num_actions, dim_states)
     exploration_target_model = copy.deepcopy(exploration_model)
@@ -509,7 +510,7 @@ if __name__ == "__main__":
     params = dict(eps_params=eps_params,
                   act_type='epsilon_greedy', reward_shaping_type=None)
 
-    dim=150
+    dim=5
     seed=12
     env = SimpleChain(int(dim))
     _, num_episodes = train(env,

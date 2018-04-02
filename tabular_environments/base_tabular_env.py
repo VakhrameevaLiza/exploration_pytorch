@@ -11,14 +11,12 @@ class ObeservationSpace:
         self.shape = (ns,)
 
 
-class SimpleChain:
-    def __init__(self, ns, p=0.0, eps=0.01, one_hot=False):
+class TabularEnvBase:
+    def __init__(self, ns, num_actions, one_hot=False):
         self.ns = ns
-        self.action_space = ActionSpace(2)
+        self.action_space = ActionSpace(num_actions)
         self.observation_space = ObeservationSpace(self.ns)
-        self.eps = eps
         self.one_hot=one_hot
-        self.p = p
 
         self.cur_state_id = 0
         self.cur_state_descr = self.convert_ns_to_description(state_id=self.cur_state_id)
@@ -58,37 +56,3 @@ class SimpleChain:
             return lambda x: int(x.argmax())
         else:
             return lambda x: int(x.sum()-1)
-
-    def step(self, a):
-        # 0 forward or loop
-        # 1 backward or loop
-        self.count_steps += 1
-        reward = 0
-
-        if a == 1 and np.random.rand() < self.p:
-            a = 0
-
-        if a == 1:
-            if self.cur_state_id == self.ns - 1:
-                reward = 1
-            self.cur_state_id = min(self.cur_state_id + 1, self.ns - 1)
-        else:
-            if self.cur_state_id == 0:
-                reward = self.eps
-            self.cur_state_id = max(self.cur_state_id - 1, 0)
-
-        self.reward += reward
-        self.cur_state_descr = self.convert_ns_to_description(state_id=self.cur_state_id)
-
-        if self.count_steps == self.ns + 9:
-            done = True
-        else:
-            done = False
-
-        s, r, d, _ = self.cur_state_descr, reward, done, None
-
-        #if done:
-        #    self.reset()
-
-        return s, r, d, _
-
