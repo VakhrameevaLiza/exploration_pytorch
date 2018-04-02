@@ -35,9 +35,8 @@ class FlippingChain(TabularEnvBase):
                 reward = self.max_rew
             self.cur_state_id = min(self.cur_state_id + 1, self.ns - 1)
         else:
-            if self.cur_state_id == 0:
-                reward = self.min_rew
-            self.cur_state_id = max(self.cur_state_id - 1, 0)
+            reward = self.min_rew
+            self.cur_state_id = 0
 
         self.reward += reward
         self.cur_state_descr = self.convert_ns_to_description(state_id=self.cur_state_id)
