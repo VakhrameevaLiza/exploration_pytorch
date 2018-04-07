@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_amd_log_images(state_action_count, all_q_values, t, folder):
+def plot_and_log_images(state_action_count, all_q_values, t, folder):
     fig = plt.figure(figsize=(10, 6))
     plt.subplot(121)
     s_a_visitations_plot = plt.imshow(state_action_count / state_action_count.sum(), vmin=0, vmax=1)

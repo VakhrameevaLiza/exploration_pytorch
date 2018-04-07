@@ -11,6 +11,8 @@ from helpers.plots import plot_q_func_and_visitations,plot_q_func_and_visitation
 from helpers.create_empty_directory import create_empty_directory
 
 from tabular_environments.chain_environment import SimpleChain
+from tabular_environments.bridge_environment import Bridge
+from tabular_environments.flipping_chain_environment import FlippingChain
 
 batch_size = 32
 
@@ -186,14 +188,6 @@ def write_tensorboard_logs(lcl):
                                         lcl['num_episodes'], lcl['t'], lcl['images_directory'])
 
 
-def check_that_solved(lcl):
-    if lcl['done'] and lcl['eval_freq'] is not None and lcl['num_episodes'] % lcl['eval_freq'] == 0:
-        test_episode_reward = eval_agent(lcl['env'], lcl['model'])
-        if test_episode_reward == 10 and lcl['count_good_rewards'] > 0:
-            print('Successfully solved environment in {} episodes'.format(lcl['num_episodes']))
-            return True
-
-
 def check_that_done(lcl):
     if lcl['done']:
         print('Episode:', lcl['num_episodes'], lcl['sum_rewards_per_episode'][-1])
@@ -241,11 +235,6 @@ def epsilon_greedy_act(num_actions, state, model, eps_t, ucb=None, log_file=None
         with open(log_file, 'a') as f:
             f.write(s)
     return action, flag
-
-
-def softmax(x):
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum()
 
 
 def soft_policy_act(num_actions, state, model, tau_t):
@@ -326,7 +315,8 @@ def train(env,
           act_type='epsilon_greedy',
           target_type='standard',
           reward_shaping_type=None,
-          do_pretraining=False
+          do_pretraining=False,
+          print_freq=1,
           ):
 
     if seed:
@@ -487,7 +477,8 @@ def train(env,
             write_tensorboard_logs(locals())
 
         if done:
-            print('Episode:', num_episodes, sum_rewards_per_episode[-1])
+            if print_freq is not None:
+                print('Episode:', num_episodes, sum_rewards_per_episode[-1])
             if np.sum(sum_rewards_per_episode[-100:]) == 100*10:
                 break
             episode_history=[]
@@ -497,7 +488,10 @@ def train(env,
             list_rewards_per_episode.append([])
             state = env.reset()
 
-    return state_action_count, num_episodes
+    if done:
+        return sum_rewards_per_episode[-2], num_episodes
+    else:
+        return sum_rewards_per_episode[-1], num_episodes
 
 
 if __name__ == "__main__":
@@ -505,20 +499,23 @@ if __name__ == "__main__":
                   'exploration_final_eps': 0.001}
 
     common_params = dict(gamma=0.99, write_logs=True, log_dir='logs/simple_experiment',
-                         plot_freq=10, target_type='double_q_learning')
+                         plot_freq=10, target_type='double_q_learning', do_pretraining=True)
 
     params = dict(eps_params=eps_params,
-                  act_type='epsilon_greedy', reward_shaping_type=None)
+                  act_type='epsilon_greedy',
+                  reward_shaping_type=None)
 
     dim=5
     seed=12
-    env = SimpleChain(int(dim))
-    _, num_episodes = train(env,
+    #env = SimpleChain(int(dim))
+    env = FlippingChain()
+    rews, num_episodes = train(env,
                             seed=seed,
                             learning_starts_in_steps=(dim + 9) * 3,
-                            max_steps=2000 * (dim + 9),
+                            #max_steps=2000 * (dim + 9),
+                            max_steps=1000*3,
                             train_freq_in_steps=10,
                             update_freq_in_steps=60,
                             **common_params, **params)
 
-    print(num_episodes)
+    print(rews)

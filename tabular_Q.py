@@ -1,12 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-from helpers.replay_buffer import ReplayBuffer
-from helpers.chain_environment import SimpleChain
 from helpers.shedules import LinearSchedule
 from helpers.create_empty_directory import create_empty_directory
 from helpers.plots import plot_q_func_and_visitations
 
+from tabular_environments.chain_environment import SimpleChain
+from tabular_environments.flipping_chain_environment import FlippingChain
 
 def get_reward_addition(s_id, next_s_id, a, C, reward_shaping_type):
     if reward_shaping_type == 'count_based_state_action':
@@ -63,6 +62,7 @@ def tabular_q_learning(env, num_episodes, gamma=0.99,
         eps_shedule = None
 
     Q = np.random.rand(dim_states * num_actions).reshape((dim_states, num_actions)) / 10
+    Q = 0.01*np.ones((dim_states, num_actions))
     C = np.zeros((dim_states, num_actions))
     t = 0
 
@@ -80,6 +80,9 @@ def tabular_q_learning(env, num_episodes, gamma=0.99,
             a = get_action(Q, C, s_id, num_actions, eps_t, act_type, alpha)
             next_s, r, done, _ = env.step(a)
             next_s_id = env.cur_state_id
+
+            print(s_id, a, next_s_id, r)
+
             r_add = get_reward_addition(s_id, next_s_id, a, C, reward_shaping_type)
 
             target_Q = (r + r_add) + gamma * Q[next_s_id].max() * (1 - done)
@@ -109,16 +112,15 @@ def tabular_q_learning(env, num_episodes, gamma=0.99,
 
 
 if __name__ == '__main__':
-    print('main!')
     eps_params = {'exploration_fraction': 0.25,
                   'exploration_final_eps': 0.001}
-    print('-')
-    env = SimpleChain(10)
-    tabular_q_learning(env, 2000, gamma=0.95,
+    #env = SimpleChain(10)
+    env = FlippingChain()
+    tabular_q_learning(env, 1, gamma=0.99,
                         eps_params=None, lr=0.5,
-                        act_type='ucb-1', reward_shaping_type=None,
+                        act_type='argmax', reward_shaping_type=None,
                         alpha=1.0,
-                        img_folder=None, print_logs=True,
+                        img_folder='logs/imgs', print_logs=True,
                         num_good_episodes_to_break=100,
                         seed=51,
                         )

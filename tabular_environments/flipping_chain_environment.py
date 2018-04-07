@@ -41,11 +41,10 @@ class FlippingChain(TabularEnvBase):
         self.reward += reward
         self.cur_state_descr = self.convert_ns_to_description(state_id=self.cur_state_id)
 
-        if self.count_steps == self.ns + 10:
+        if self.count_steps == 1000:
             done = True
         else:
             done = False
-
         s, r, d, _ = self.cur_state_descr, reward, done, None
 
         if done:

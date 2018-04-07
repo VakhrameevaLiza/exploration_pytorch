@@ -2,8 +2,13 @@ from tabular_environments.flipping_chain_environment import FlippingChain
 
 env = FlippingChain()
 s = env.reset()
-print(s)
-actions = [1,1,1,1,1]
-for a in actions:
-    s, _, _, _ = env.step(a)
-    print(s)
+
+cnt = 0
+total_rew = 0
+for t in range(2000 * 1000):
+    s, r, done, _ = env.step(1)
+    cnt+=1
+    total_rew+=r
+print('--')
+print(cnt)
+print(total_rew/2000)
