@@ -5,5 +5,5 @@ from helpers.create_empty_directory import create_empty_directory
 from.helpers.log_sum_exp import log_sum_exp
 from tabular_environments.base_tabular_env import TabularEnvBase
 from tabular_environments.chain_environment import SimpleChain
-from tabular_environments.bridge_environment import Bridge
+from tabular_environments.bridge_environment_ import Bridge
 from tabular_environments.flipping_chain_environment import FlippingChain

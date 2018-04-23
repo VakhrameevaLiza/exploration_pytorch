@@ -20,7 +20,7 @@ def smooth(arr, alpha):
 def plot_learning_history_with_pgs(logs, pgs,
                                    title='online training',
                                    smooth_pg=True, alpha=0.1,
-                                   filename=None):
+                                   red_lines=[], filename=None):
     ll_log, kld_log = logs[0], logs[1]
 
     num_plots = 3
@@ -31,7 +31,8 @@ def plot_learning_history_with_pgs(logs, pgs,
 
     plt.subplot(1, num_plots, 1)
     plt.plot(ll_log)
-    plt.title('LL ({})'.format(title), fontsize=15)
+    for line in red_lines:
+        plt.axvline(x=line, color='red', linewidth=1)
     plt.title('Log-Likelihood ({})'.format(title), fontsize=15)
     plt.ylabel('LL', fontsize=15)
     plt.xlabel('steps', fontsize=15)
@@ -39,6 +40,8 @@ def plot_learning_history_with_pgs(logs, pgs,
     
     plt.subplot(1, num_plots, 2)
     plt.plot(kld_log)
+    for line in red_lines:
+        plt.axvline(x=line, color='red', linewidth=1)
     plt.title('KL-divergence ({})'.format(title), fontsize=15)
     plt.ylabel('KL', fontsize=15)
     plt.xlabel('steps', fontsize=15)
@@ -47,6 +50,8 @@ def plot_learning_history_with_pgs(logs, pgs,
     if smooth_pg:
         plt.subplot(1, num_plots, 3)
         plt.plot(smooth(pgs, alpha), label='smoothed({})'.format(alpha))
+        for line in red_lines:
+            plt.axvline(x=line, color='red', linewidth=1)
         plt.axhline(y=0, color='r', linewidth=2)
         plt.ylim(-2, 10)
         plt.title('Prediction gains ({})'.format(title), fontsize=15)
@@ -60,6 +65,8 @@ def plot_learning_history_with_pgs(logs, pgs,
 
     plt.subplot(1, num_plots, non_smothed_id)
     plt.plot(pgs)
+    for line in red_lines:
+        plt.axvline(x=line, color='red', linewidth=1)
     plt.axhline(y=0, color='r', linewidth=2)
     plt.ylim(-2, 10)
     plt.title('Prediction gains ({})'.format(title), fontsize=15)

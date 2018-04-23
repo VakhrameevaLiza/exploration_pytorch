@@ -1,5 +1,5 @@
 from tabular_environments.chain_environment import SimpleChain
-from tabular_environments.bridge_environment import Bridge
+from tabular_environments.bridge_environment_ import Bridge
 
 env = Bridge(2)
 s = env.reset()

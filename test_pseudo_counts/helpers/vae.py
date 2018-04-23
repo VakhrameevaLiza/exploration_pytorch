@@ -1,13 +1,9 @@
-import torch
-import torch.utils.data
-from torch import nn, optim
-from torch.autograd import Variable
-from torch.nn import functional as F
-from torchvision import datasets, transforms
-from torchvision.utils import save_image
 import numpy as np
+from torch import nn
+from torch.nn import functional as F
 
-from .convert_to_var_foo import convert_to_var
+from helpers.convert_to_var_foo import convert_to_var
+
 
 class Flatten(nn.Module):
     def forward(self, x):

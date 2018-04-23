@@ -56,6 +56,34 @@ def plot_q_func_and_visitations(episode_state_action_count,
     plt.close(fig)
 
 
+def plot_q_func_and_visitations_bridge(episode_state_action_count,
+                                       state_action_count, all_q_values, num_episodes, t, dir_img
+                                      ):
+    num_states, num_actions = episode_state_action_count.shape
+    ids = np.arange(num_states // 3) * 3 + 1
+    h, w = 2,3
+    fig = plt.figure(figsize=(10,6))
+
+    ax1 = plt.subplot2grid((h,w), (0,0), rowspan=2)
+    plt.imshow(episode_state_action_count[ids])# / episode_state_action_count.sum(), vmin=0, vmax=1)
+    plt.colorbar()
+    plt.title('Episode S-A Visitations')
+
+    ax2 = plt.subplot2grid((h,w), (0,1), rowspan=2)
+    plt.imshow(state_action_count[ids])#/ state_action_count.sum(), vmin=0, vmax=1)
+    plt.colorbar()
+    plt.title('S-A Visitations')
+
+    ax3 = plt.subplot2grid((h,w), (0,2), rowspan=2)
+    plt.imshow(all_q_values[ids])#, vmax=int(np.maximum(10, all_q_values).max()))
+    plt.colorbar()
+    plt.title('Q-values')
+
+    plt.savefig(dir_img + '/episode:{}, step:{}.png'.format(num_episodes, t))
+    plt.close(fig)
+
+
+
 def plot_q_func_and_visitations_and_policy(total_states_cnt, episode_state_action_count,
                   state_action_count, all_q_values, all_policy_probs, num_episodes, t, dir
                   ):
@@ -97,3 +125,4 @@ def plot_q_func_and_visitations_and_policy(total_states_cnt, episode_state_actio
 
     plt.savefig(dir + '/episode:{}, step:{}.png'.format(num_episodes, t))
     plt.close(fig)
+

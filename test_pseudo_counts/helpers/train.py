@@ -1,8 +1,9 @@
 import numpy as np
 from tqdm import trange
-from .convert_to_var_foo import convert_to_var
-from .loss import loss_function
+
+from helpers.convert_to_var_foo import convert_to_var
 from .create_model_data import get_one_hot_object
+from .loss import loss_function
 from .plots import plot_learning_history, plot_learning_history_with_pgs
 
 
@@ -102,7 +103,7 @@ def train(X_train, X_test,
 
 def train_online(schedule, X_test,
                  model, optimizer,
-                 kl_weight=1, alpha=0.1, img_name=None):
+                 kl_weight=1, alpha=0.1, img_name=None, red_lines=[]):
     np.random.seed(11)
 
     X_test = np.array(X_test)
@@ -134,6 +135,73 @@ def train_online(schedule, X_test,
                                                                         kl_weight=kl_weight, return_loss=True)
 
         pg = log_prob_after - log_prob_before
+        pgs.append(pg)
+
+        loss_gain = loss_next.data.numpy()[0] - loss.data.numpy()[0]
+        total_loss_gains.append(loss_gain)
+
+        kld_gain = kld_next.data.numpy()[0] - kld.data.numpy()[0]
+        kl_gains.append(kld_gain)
+
+        for i, obj in enumerate(X_test):
+            log_prob = get_obj_log_prob(model, obj, return_loss=False)
+            all_log_probs[i].append(log_prob)
+
+    plot_learning_history_with_pgs(train_logs, pgs,
+                                   alpha=alpha, red_lines=red_lines, filename=img_name)
+
+    pgs = np.array(pgs)
+    pct = (pgs < 0).mean()
+
+    lls = np.array(train_logs[0])
+    mean_last_ll = lls[-10:].mean()
+
+    return mean_last_ll, pct, all_log_probs, pgs, total_loss_gains, kl_gains
+
+
+def train_online_alternately(schedule, X_test,
+                             model, kl_optimizer, ll_optimizer,
+                             kl_weight=1, alpha=0.1, img_name=None):
+    np.random.seed(11)
+
+    X_test = np.array(X_test)
+    num_classes, dim = X_test.shape[0], X_test.shape[1]
+
+    pgs = []
+    total_loss_gains = []
+    kl_gains = []
+
+    train_logs = [[] for _ in range(2)]
+    all_log_probs = [[] for _ in range(len(X_test))]
+
+    for t in range(len(schedule)):
+        model.train()
+        cur_class = schedule[t]
+        obj = get_one_hot_object(cur_class, dim, num_classes)
+
+        _, loss, ll, kld = get_obj_log_prob(model, obj,
+                                            kl_weight=kl_weight, return_loss=True)
+
+        train_logs[0].append(ll.data.numpy()[0])
+        train_logs[1].append(kld.data.numpy()[0])
+
+        kl_optimizer.zero_grad()
+        kl_loss = kl_weight * kld
+        kl_loss.backward()
+        kl_optimizer.step()
+
+        log_prob_before, loss, ll, kld = get_obj_log_prob(model, obj,
+                                            kl_weight=kl_weight, return_loss=True)
+
+        ll_optimizer.zero_grad()
+        neg_ll = -1 * ll
+        neg_ll.backward()
+        ll_optimizer.step()
+
+        log_prob_after, loss_next, ll_next, kld_next = get_obj_log_prob(model, obj,
+                                                                        kl_weight=kl_weight, return_loss=True)
+
+        pg = ll_next.data.numpy()[0] - ll.data.numpy()[0]#log_prob_after - log_prob_before
         pgs.append(pg)
 
         loss_gain = loss_next.data.numpy()[0] - loss.data.numpy()[0]
