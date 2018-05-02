@@ -41,7 +41,8 @@ class ContinuousPolicy(nn.Module):
         layers.append(nn.Linear(hidden_size, 2 * action_dim))
         self.model = nn.Sequential(*layers)
         self.action_dim = action_dim
-
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
 
     def forward(self, states):
         out = self.model(states)
@@ -72,7 +73,8 @@ class ValueFunction(nn.Module):
                                    nn.Linear(hidden_size, hidden_size),
                                    nn.ReLU(),
                                    nn.Linear(hidden_size, 1))
-
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
     def forward(self, states):
         values = self.model(states)
         return values

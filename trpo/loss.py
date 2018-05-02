@@ -1,5 +1,6 @@
 import torch
 from torch.autograd import Variable
+from helpers.convert_to_var_foo import convert_to_var
 import numpy as np
 
 
@@ -49,7 +50,7 @@ def get_normal_kl(agent, observations, old_parameters):
 
 
 def get_discrete_entropy(agent, observations):
-    observations = Variable(torch.FloatTensor(observations))
+    observations = convert_to_var(observations)
 
     batch_size = observations.shape[0]
     log_probs_all = agent.get_log_probs(observations)
@@ -62,7 +63,7 @@ def get_discrete_entropy(agent, observations):
 
 
 def get_normal_entropy(agent, observations):
-    observations = Variable(torch.FloatTensor(observations))
+    observations = convert_to_var(observations)
     mu, logvar = agent.policy.forward(observations)
     var = torch.exp(logvar)
     entropy = 0.5 * torch.mean(

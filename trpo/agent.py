@@ -1,5 +1,5 @@
 from trpo.models import DiscretePolicy, ContinuousPolicy, ValueFunction
-from torch.autograd import Variable
+from helpers.convert_to_var_foo import convert_to_var
 import numpy as np
 import torch
 from scipy.stats import norm
@@ -34,7 +34,7 @@ class TRPOAgent:
 
     def act(self, obs, sample=True):
         if self.discrete_type:
-            probs = self.get_probs(Variable(torch.FloatTensor([obs]))).data.numpy()
+            probs = self.get_probs(convert_to_var(obs, add_dim=True)).data.numpy()
             n_actions = probs.shape[1]
             if sample:
                 action = int(np.random.choice(n_actions, p=probs[0]))
@@ -42,7 +42,7 @@ class TRPOAgent:
                 action = int(np.argmax(probs[0]))
             return action, probs[0][action], probs[0]
         else:
-            mu, logvar = self.policy.forward(Variable(torch.FloatTensor([obs])))
+            mu, logvar = self.policy.forward(convert_to_var(obs, add_dim=True))
             mu = mu.data.numpy()
             logvar = logvar.data.numpy()
             std = np.exp(0.5 * logvar)

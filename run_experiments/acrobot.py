@@ -1,5 +1,5 @@
 from qlearning.train import train
-from qlearning.models import DQNnet
+from qlearning.models import Qnet
 import gym
 import numpy as np
 import torch
@@ -10,7 +10,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     seed_range = [np.random.randint(1000) for _ in range(5)]
 
-    eps_params = {'exploration_fraction': 0.25,
+    eps_params = {'exploration_fraction': 0.5,
                   'exploration_final_eps': 0.01}
 
     common_params = dict(gamma=0.99, write_logs=True,
@@ -18,7 +18,7 @@ if __name__ == "__main__":
                          target_type='standard_q_learning')
     params = dict(eps_params=eps_params, lr=1e-4, act_type='epsilon_greedy')
 
-    max_num_episodes = 300
+    max_num_episodes = 200
     results = np.zeros((len(seed_range), max_num_episodes))
 
     for i, seed in enumerate(seed_range):
@@ -28,21 +28,21 @@ if __name__ == "__main__":
         torch.manual_seed(seed)
         np.random.seed(seed)
 
-        model = DQNnet(env.action_space.n,
+        model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=256, num_hidden=2)
+                       hidden_size=512, num_hidden=2, seed=seed)
 
         rews, num_episodes = train(env,model,
                                    seed=seed,
                                    replay_buffer_size=1e+6,
-                                   batch_size=256,
+                                   batch_size=64,
                                    learning_starts_in_steps=500,
                                    max_steps=500*max_num_episodes,
                                    max_num_episodes=max_num_episodes,
                                    train_freq_in_steps=5,
-                                   update_freq_in_steps=50,
+                                   update_freq_in_steps=200,
                                    **common_params,
                                    **params)
         results[i] = rews
 
-    np.save('acrobot', results)
+    np.save('../results/dqn_environments/acrobot', results)

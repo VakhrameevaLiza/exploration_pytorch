@@ -56,3 +56,7 @@ class TabularEnvBase:
             return lambda x: int(x.argmax())
         else:
             return lambda x: int(x.sum()-1)
+
+
+    def seed(self, seed):
+        pass

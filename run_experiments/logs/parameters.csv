@@ -1,0 +1,5 @@
+dim_states: 2
+seed: 860
+action selection type: epsilon_greedy
+target q-function type: standard_q_learning
+Without epsilon: False

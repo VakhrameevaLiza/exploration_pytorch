@@ -1,6 +1,5 @@
 import torch
-from torch.autograd import Variable
-
+from helpers.convert_to_var_foo import convert_to_var
 from trpo.loss import get_loss, get_discrete_kl, get_normal_kl
 from trpo.utils import conjugate_gradient, linesearch
 from trpo.utils import get_flat_params_from, set_flat_params_to
@@ -19,25 +18,22 @@ def update_step(agent, optimizer, observations, actions,
     :returns: KL between new and old policies and the value of the loss function.
     """
     # Here we prepare the information
-    observations = Variable(torch.FloatTensor(observations))
+    observations = convert_to_var(observations)
     if agent.discrete_type:
-        actions = torch.LongTensor(actions)
+        actions = convert_to_var(actions, astype='long')
     else:
-        actions = Variable(torch.FloatTensor(actions))
+        actions = convert_to_var(actions)
 
-    cummulative_returns = Variable(torch.FloatTensor(cummulative_returns))
-    old_probs_for_actions = Variable(torch.FloatTensor(old_probs_for_actions))
+    cummulative_returns = convert_to_var(cummulative_returns)
+    old_probs_for_actions = convert_to_var(old_probs_for_actions)
     if old_policies is not None:
-        old_policies = Variable(torch.FloatTensor(old_policies))
+        old_policies = convert_to_var(old_policies)
     if old_mu is not None and old_logvar is not None:
-        old_mu = Variable(torch.FloatTensor(old_mu))
-        old_logvar = Variable(torch.FloatTensor(old_logvar))
-
-
+        old_mu = convert_to_var(old_mu)
+        old_logvar = convert_to_var(old_logvar)
     # Here we compute gradient of the loss function
     loss, value_loss = get_loss(agent, observations, actions,
                                 cummulative_returns, old_probs_for_actions)
-
     optimizer.zero_grad()
     value_loss.backward()
     optimizer.step()
@@ -56,7 +52,7 @@ def update_step(agent, optimizer, observations, actions,
         grads = torch.autograd.grad(kl, agent.policy.parameters(), create_graph=True)
         flat_grad_kl = torch.cat([grad.view(-1) for grad in grads])
 
-        kl_v = (flat_grad_kl * Variable(v)).sum()
+        kl_v = (flat_grad_kl * convert_to_var(v.numpy())).sum()
         grads = torch.autograd.grad(kl_v, agent.policy.parameters())
         flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
 

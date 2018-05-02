@@ -9,12 +9,32 @@ def epsilon_greedy_act(num_actions, state, model, eps_t, ucb=None, log_file=None
         q_values += ucb
     if np.random.rand() < eps_t:
         action = np.random.randint(num_actions)
-        flag='random'
     else:
         action = q_values.argmax()
-        flag='argmax'
-    if log_file is not None:
-        s = str(action) + ',' + ','.join([str(q) for q in q_values]) + '\n'
-        with open(log_file, 'a') as f:
-            f.write(s)
-    return action, flag
+    return action
+
+
+def safe_log(values, base=np.e):
+    eps = 1e-10 # avoid zero in log
+    if sum(values < 1e-8) > 0:
+        values += eps
+    return np.log(values) / np.log(base)
+
+
+def lll_epsilon_greedy_act(num_actions, state, model, e_model, e_lr,
+                           eps_t, ucb=None, log_file=None):
+    state_var = convert_to_var(state, add_dim=True)
+    q_values = model.forward(state_var).data.numpy()[0]
+    e_values = e_model.forward(state_var).data.numpy()[0]
+    probs = np.ones_like(q_values) * eps_t / num_actions
+
+    if ucb is not None:
+        q_values += ucb
+
+    probs[q_values.argmax()] += 1 - eps_t
+    log_prob = safe_log(probs)
+    log_log_E = safe_log(safe_log(e_values, 1 - e_lr) + np.log(2) / np.log(1-e_lr) )
+
+    action = int(np.argmax(log_prob - log_log_E))
+
+    return action

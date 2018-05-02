@@ -7,7 +7,7 @@ from helpers.convert_to_var_foo import convert_to_var
 def pretrain(model, all_states, num_actions,
              max_steps, eps, writer):
     n_states = all_states.shape[0]
-    target = convert_to_var(np.ones((n_states,num_actions)) / num_actions)
+    target = convert_to_var(np.zeros((n_states,num_actions)))
     all_states = convert_to_var(all_states)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 

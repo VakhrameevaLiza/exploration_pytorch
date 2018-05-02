@@ -7,7 +7,7 @@ from helpers.convert_to_var_foo import convert_to_var
 def dqn_loss(optimizer, model, target_model, batch, gamma,
                       target_type='standard_q_learning'
                      ):
-    states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch = batch
+    states_batch, actions_batch, rewards_batch, dones_batch, next_states_batch, _ = batch
     states_batch_var = convert_to_var(states_batch)
     actions_batch_var = convert_to_var(actions_batch[:, np.newaxis], astype='int64')
     rewards_batch_var = convert_to_var(rewards_batch)
@@ -44,15 +44,21 @@ def sarsa_loss(optimizer, model, target_model, batch, gamma):
     states, actions, rewards, dones, next_states, next_actions = batch
 
     states = convert_to_var(states)
-    actions = convert_to_var(actions, add_dim=True, astype='int64')
+    actions = convert_to_var(actions[:, np.newaxis], astype='int64')
     rewards = convert_to_var(rewards)
     next_states = convert_to_var(next_states)
-    next_actions = convert_to_var(next_actions, add_dim=True, astype='int64')
+    next_actions = convert_to_var(next_actions[:, np.newaxis], astype='int64')
     dones = convert_to_var(dones)
 
-    e_values = model.forward(states).gather(1, actions)
-    next_e_values = target_model.forward(next_states).gather(1, next_actions).detach()
+    rewards = torch.zeros_like(rewards)
+
+    e_values = model.forward(states).gather(1, actions)[:,0]
+    next_e_values = target_model.forward(next_states).gather(1, next_actions).detach()[:,0]
     next_e_values[dones.byte()] = 0
+
+    #print("e_values", e_values.shape)
+    #print("next_e_values", next_e_values.shape)
+    #print("rewards", rewards.shape)
 
     target_e_values = rewards + gamma * next_e_values
 

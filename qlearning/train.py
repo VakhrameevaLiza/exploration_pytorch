@@ -5,13 +5,14 @@ from tensorboardX import SummaryWriter
 
 from helpers.create_empty_directory import create_empty_directory
 from qlearning.pretrain import pretrain
-from qlearning.act import epsilon_greedy_act
+from qlearning.act import epsilon_greedy_act, lll_epsilon_greedy_act
 from qlearning.q_loss import dqn_loss, sarsa_loss
 from qlearning.write_logs import write_tensorboard_tabular_logs, write_tensorboard_logs
 from helpers.replay_buffer import ReplayBuffer, CountBasedReplayBuffer
 from helpers.shedules import LinearSchedule
 from helpers.utils import set_seed
 from helpers.convert_to_var_foo import convert_to_var
+
 
 def count_rew_addition(state_action_count, state_id, next_state_id, action, type):
     eps = np.finfo(float).eps
@@ -101,7 +102,7 @@ def train_tabular(env, model,
     # define models
     if do_pretraining:
         pretrain(model, env.get_all_states(), num_actions,
-                 eps=1e-5, max_steps=int(1e3), writer=writer)
+                 eps=1e-6, max_steps=int(1e5), writer=writer)
     target_model = copy.deepcopy(model)
 
     # define optimizer
@@ -261,7 +262,7 @@ def train(env, model,
 
     # define shedule of epsilon in epsilon-greedy exploration
     if eps_params is not None:
-        schedule_timesteps = int(eps_params['exploration_fraction'] * max_steps)
+        schedule_timesteps = int(eps_params['exploration_fraction'] * max_num_episodes)
         print('schedule_timesteps',schedule_timesteps)
         eps_shedule = LinearSchedule(schedule_timesteps=schedule_timesteps,
                                      initial_p=1.0,
@@ -279,12 +280,11 @@ def train(env, model,
     break_flag=False
 
     for t in range(max_steps):
-        eps_t = eps_shedule.value(t) if eps_shedule else 0
+        eps_t = eps_shedule.value(num_episodes) if eps_shedule else 0
 
-        action, flag = epsilon_greedy_act(num_actions, state, model, eps_t)
+        action = epsilon_greedy_act(num_actions, state, model, eps_t)
         next_state, rew, done, _ = env.step(action)
-        #env.render()
-        replay_buffer.add(state, action, rew, next_state, done)
+        replay_buffer.add(state, action, rew, done, next_state, _)
 
         sum_rewards_per_episode[-1] += rew
         list_rewards_per_episode[-1].append(rew)
@@ -343,12 +343,15 @@ def train_with_e_learning(env, model, e_model,
                           act_type='epsilon_greedy',
                           target_type='standard',
                           print_freq=1,
-                          batch_size=32
+                          batch_size=32,
+                          do_pretraining=False,
+                          chain_criterion=False,
                           ):
 
     if seed:
         np.random.seed(seed)
         torch.manual_seed(seed)
+        env.seed(seed)
 
     num_actions = env.action_space.n
     dim_states = env.observation_space.shape[0]
@@ -375,12 +378,12 @@ def train_with_e_learning(env, model, e_model,
 
     # define optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    e_optimizer = torch.optim.Adam(e_model.parameters(), lr=e_lr)
+    e_optimizer = torch.optim.RMSprop(e_model.parameters(), momentum=0.9, lr=e_lr)
 
     # define shedule of epsilon in epsilon-greedy exploration
     if eps_params is not None:
-        schedule_timesteps = int(eps_params['exploration_fraction'] * max_steps)
-        print('schedule_timesteps',schedule_timesteps)
+        schedule_timesteps = int(eps_params['exploration_fraction'] * max_num_episodes)
+        print('schedule_timesteps', schedule_timesteps)
         eps_shedule = LinearSchedule(schedule_timesteps=schedule_timesteps,
                                      initial_p=1.0,
                                      final_p=eps_params['exploration_final_eps'])
@@ -397,50 +400,82 @@ def train_with_e_learning(env, model, e_model,
     break_flag=False
 
     t = 1
+    max_state = 0
     for episode in range(max_num_episodes):
+        ucb_work = 0
+        episode_trajectory = []
         if len(sum_rewards_per_episode) > max_num_episodes:
             break
 
-        eps_t = eps_shedule.value(t) if eps_shedule else 0
+        if len(sum_rewards_per_episode) > 10 and t > learning_starts_in_steps  and chain_criterion:
+            if np.sum(sum_rewards_per_episode[-11:]) == 10*10:
+                break
+
+        eps_t = eps_shedule.value(episode) if eps_shedule else 0
 
         if add_ucb:
             e_values = e_model.forward(convert_to_var(state)).data.numpy()
-            cnt = np.log(e_values) / np.log(1-e_lr)
+            q_values = e_model.forward(convert_to_var(state)).data.numpy()
+            cnt = np.log(e_values) / np.log(1-e_lr) + np.log(2) / np.log(1-e_lr)
             ucb = np.sqrt(2 * np.log(t) / cnt)
+            ucb *= beta
+
+            if q_values.argmax() != (q_values+ucb).argmax():
+                ucb_work += 1
         else:
             ucb = None
-        action, flag = epsilon_greedy_act(num_actions, state, model, eps_t, ucb=ucb)
 
+        if act_type == 'epsilon_greedy':
+            action = epsilon_greedy_act(num_actions, state, model,
+                                        eps_t, ucb=ucb)
+        elif act_type == 'lll_epsilon_greedy':
+            action = lll_epsilon_greedy_act(num_actions, state, model, e_model, e_lr,
+                                            eps_t, ucb=ucb)
         episode_steps = 0
+        max_episode_state = 0
         while True:
+            #max_state = max(max_state, env.convert_state_to_id(state))
+            #max_episode_state = max(max_episode_state, env.convert_state_to_id(state))
             next_state, rew, done, _ = env.step(action)
             if add_bonus:
                 e_values = e_model.forward(convert_to_var(state)).data.numpy()
-                cnt = np.log(e_values) / np.log(1 - e_lr)
+                cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1-e_lr)
                 rew_ = rew + beta / cnt[action]
             else:
                 rew_ = rew
-            replay_buffer.add(state, action, rew_, next_state, done)
 
             sum_rewards_per_episode[-1] += rew
             list_rewards_per_episode[-1].append(rew)
             t += 1
 
-            eps_t = eps_shedule.value(t) if eps_shedule else 0
-            if add_ucb:
+            if add_ucb and t>learning_starts_in_steps:
                 q_values = model.forward(convert_to_var(state)).data.numpy()
                 e_values = e_model.forward(convert_to_var(state)).data.numpy()
-                cnt = np.log(e_values) / np.log(1 - e_lr)
+                #print(np.round(e_values,3), np.round(q_values, 3))
+                cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1-e_lr)
                 ucb = np.sqrt(2 * np.log(t) / cnt)
+                ucb *= beta
+                if q_values.argmax() != (q_values+ucb).argmax():
+                    t_ucb_max = t
+                    ucb_work += 1
+                    #print('+', np.round(e_values, 2), np.round(ucb,2), np.round(q_values, 3))
+                else:
+                    pass
+                    #print('-', np.round(e_values, 2), np.round(ucb,2), np.round(q_values, 3))
             else:
                 ucb = None
-            next_action, flag = epsilon_greedy_act(num_actions, next_state, model, eps_t, ucb=ucb)
+            if act_type == 'epsilon_greedy':
+                next_action = epsilon_greedy_act(num_actions, state, model, eps_t, ucb=ucb)
+            elif act_type == 'lll_epsilon_greedy':
+                next_action = lll_epsilon_greedy_act(num_actions, state, model, e_model, e_lr,
+                                                     eps_t, ucb=ucb)
 
-            batch = [np.array([state]), np.array([action]),
-                     np.array([0]), np.array([done]),
-                     np.array([next_state]), np.array([next_action])]
+            replay_buffer.add(state, action, rew_, done, next_state, next_action)
 
-            e_loss = sarsa_loss(e_optimizer, e_model, target_e_model, batch, gamma_E)
+            if t > learning_starts_in_steps:
+                batch = [np.array([state]), np.array([action]), np.array([rew_]),
+                         np.array([done]), np.array([next_state]), np.array([next_action])]
+                e_loss = sarsa_loss(e_optimizer, e_model, target_e_model, batch, gamma_E)
 
             state = next_state
             action = next_action
@@ -449,9 +484,10 @@ def train_with_e_learning(env, model, e_model,
                 batch = replay_buffer.sample(batch_size)
                 loss = dqn_loss(optimizer, model, target_model, batch, gamma,
                                 target_type=target_type)
+                e_loss = sarsa_loss(e_optimizer, e_model, target_e_model, batch, gamma_E)
             else:
                 loss = 0
-                exploration_loss = 0
+                e_loss = 0
 
             if t > learning_starts_in_steps and t % update_freq_in_steps == 0:
                 target_model = copy.deepcopy(model)
@@ -462,10 +498,11 @@ def train_with_e_learning(env, model, e_model,
             episode_steps += 1
             if done:
                 if print_freq is not None:
-                    print('t: {}, Episode: {}, sum: {}, eps: {:.2f}'.\
+                    print('t: {}, Episode: {}, sum: {:.2f}, eps: {:.2f}'.\
                           format(t, num_episodes, sum_rewards_per_episode[-1], eps_t))
-                    print("ucb:", ucb)
-                    print("qs:", q_values)
+                    if add_ucb:
+                        print('ucb in episode: {}'.format(ucb_work))
+
                 num_episodes += 1
                 sum_rewards_per_episode.append(0)
                 state = env.reset()
