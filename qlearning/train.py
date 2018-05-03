@@ -439,7 +439,7 @@ def train_with_e_learning(env, model, e_model,
             next_state, rew, done, _ = env.step(action)
             if add_bonus:
                 e_values = e_model.forward(convert_to_var(state)).data.numpy()
-                cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1-e_lr)
+                cnt = cd
                 rew_ = rew + beta / cnt[action]
             else:
                 rew_ = rew

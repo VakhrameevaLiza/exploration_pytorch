@@ -1,6 +1,7 @@
 from helpers.convert_to_var_foo import convert_to_var
 from helpers.plots import plot_q_func_and_visitations
 import numpy as np
+import torch
 
 
 def write_tensorboard_tabular_logs(lcl):
@@ -11,7 +12,10 @@ def write_tensorboard_tabular_logs(lcl):
 
     if plot_q_func:
         all_q_values = lcl['model'].forward(all_states_var)
-        all_q_values = all_q_values.data.numpy()
+        if torch.cuda.is_available():
+            all_q_values = all_q_values.cpu().data.numpy()
+        else:
+            all_q_values = all_q_values.data.numpy()
         for i in range(lcl['n_all_states']):
             if (2 <= i < lcl['n_all_states'] - 2) and lcl['n_all_states'] >= 10:
                 continue
