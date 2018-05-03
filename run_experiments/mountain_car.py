@@ -9,7 +9,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     seed_range = [np.random.randint(1000) for _ in range(3)]
 
-    eps_params = {'exploration_fraction': 0.1,
+    eps_params = {'exploration_fraction': 0.25,
                   'exploration_final_eps': 0.01}
 
     common_params = dict(gamma=0.99, write_logs=False,
@@ -25,8 +25,8 @@ if __name__ == "__main__":
         env = gym.make('MountainCar-v0')
         model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=1, seed=seed,
-                       activation_type='tanh')
+                       hidden_size=512, num_hidden=2, seed=seed,
+                       activation_type='relu')
 
         rews, num_episodes = train(env,model,
                                    seed=seed,
@@ -41,5 +41,5 @@ if __name__ == "__main__":
                                    **params)
         results[i] = rews
 
-        np.save('../results/dqn_environments/mountain_car_1', results)
+        np.save('../results/dqn_environments/mountain_car', results)
     #16:51
