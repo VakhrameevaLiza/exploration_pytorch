@@ -227,7 +227,8 @@ def train(env, model,
           act_type='epsilon_greedy',
           target_type='standard',
           print_freq=1,
-          batch_size=32
+          batch_size=32,
+          return_states = False,
           ):
 
     if seed:
@@ -276,6 +277,7 @@ def train(env, model,
     num_episodes = 0
     sum_rewards_per_episode = [0]
     list_rewards_per_episode = [[]]
+    state_history = []
     state = env.reset()
     break_flag=False
 
@@ -288,6 +290,7 @@ def train(env, model,
 
         sum_rewards_per_episode[-1] += rew
         list_rewards_per_episode[-1].append(rew)
+        state_history.append(state)
 
         state = next_state
 
@@ -316,10 +319,20 @@ def train(env, model,
         if len(sum_rewards_per_episode) > max_num_episodes:
             break
 
-    if done:
-        return sum_rewards_per_episode[:-1], num_episodes-1
+    state_history = np.array(state_history)
+
+    if return_states:
+        if done:
+            return sum_rewards_per_episode[:-1], num_episodes-1, state_history
+        else:
+            return sum_rewards_per_episode, num_episodes, state_history
     else:
-        return sum_rewards_per_episode, num_episodes
+        if done:
+            return sum_rewards_per_episode[:-1], num_episodes-1
+        else:
+            return sum_rewards_per_episode, num_episodes
+
+
 
 
 def train_with_e_learning(env, model, e_model,
@@ -346,6 +359,7 @@ def train_with_e_learning(env, model, e_model,
                           batch_size=32,
                           do_pretraining=False,
                           chain_criterion=False,
+                          return_states=False
                           ):
 
     if seed:
@@ -396,6 +410,7 @@ def train_with_e_learning(env, model, e_model,
     num_episodes = 0
     sum_rewards_per_episode = [0]
     list_rewards_per_episode = [[]]
+    state_history = []
     state = env.reset()
     break_flag=False
 
@@ -411,7 +426,7 @@ def train_with_e_learning(env, model, e_model,
             if np.sum(sum_rewards_per_episode[-11:]) == 10*10:
                 break
 
-        eps_t = eps_shedule.value(episode) if eps_shedule else 0
+        eps_t = eps_shedule.value(episode+1) if eps_shedule else 0
 
         if add_ucb:
             e_values = e_model.forward(convert_to_var(state)).data.numpy()
@@ -425,12 +440,8 @@ def train_with_e_learning(env, model, e_model,
         else:
             ucb = None
 
-        if act_type == 'epsilon_greedy':
-            action = epsilon_greedy_act(num_actions, state, model,
-                                        eps_t, ucb=ucb)
-        elif act_type == 'lll_epsilon_greedy':
-            action = lll_epsilon_greedy_act(num_actions, state, model, e_model, e_lr,
-                                            eps_t, ucb=ucb)
+        action = epsilon_greedy_act(num_actions, state, model,
+                                    eps_t, ucb=ucb)
         episode_steps = 0
         max_episode_state = 0
         while True:
@@ -439,13 +450,14 @@ def train_with_e_learning(env, model, e_model,
             next_state, rew, done, _ = env.step(action)
             if add_bonus:
                 e_values = e_model.forward(convert_to_var(state)).data.numpy()
-                cnt = cd
+                cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1 - e_lr)
                 rew_ = rew + beta / cnt[action]
             else:
                 rew_ = rew
 
             sum_rewards_per_episode[-1] += rew
             list_rewards_per_episode[-1].append(rew)
+            state_history.append(state)
             t += 1
 
             if add_ucb and t>learning_starts_in_steps:
@@ -508,7 +520,14 @@ def train_with_e_learning(env, model, e_model,
                 state = env.reset()
                 break
 
-    if done:
-        return sum_rewards_per_episode[:-1], num_episodes-1
+    state_history = np.array(state_history)
+    if return_states:
+        if done:
+            return sum_rewards_per_episode[:-1], num_episodes-1, state_history
+        else:
+            return sum_rewards_per_episode, num_episodes, state_history
     else:
-        return sum_rewards_per_episode, num_episodes
+        if done:
+            return sum_rewards_per_episode[:-1], num_episodes-1
+        else:
+            return sum_rewards_per_episode, num_episodes

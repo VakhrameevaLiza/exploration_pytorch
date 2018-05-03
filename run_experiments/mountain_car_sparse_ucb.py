@@ -35,7 +35,7 @@ if __name__ == "__main__":
                        )
         e_model = Enet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=1, seed=seed)
+                       hidden_size=512, num_hidden=2, seed=seed)
 
         rews, num_episodes = train_with_e_learning(env,model, e_model,
                                    add_ucb=ucb,

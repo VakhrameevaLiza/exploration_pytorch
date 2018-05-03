@@ -11,7 +11,7 @@ def epsilon_greedy_act(num_actions, state, model, eps_t, ucb=None, log_file=None
         q_values = model.forward(state_var).data.numpy()[0]
         
     if ucb is not None:
-        q_values += convert_to_var(ucb, add_dim=True)
+        q_values += ucb
     if np.random.rand() < eps_t:
         action = np.random.randint(num_actions)
     else:

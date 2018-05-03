@@ -1,3 +1,6 @@
 import os
+import numpy as np
 
-print(os.path.dirname(os.path.abspath(__file__)))
+arr = np.load('results/dqn_environments/mountain_car_ucb_history.npy')
+
+print(arr.shape)

@@ -10,7 +10,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     seed_range = [np.random.randint(1000) for _ in range(3)]
 
-    eps_params = {'exploration_fraction': 0.1,
+    eps_params = {'exploration_fraction': 0.25,
                   'exploration_final_eps': 0.01}
 
     common_params = dict(gamma=0.99, write_logs=False,
@@ -26,6 +26,7 @@ if __name__ == "__main__":
 
     max_num_episodes = 5000
     results = np.zeros((len(seed_range), max_num_episodes))
+    all_history = []
 
     for i, seed in enumerate(seed_range):
         env = gym.make('MountainCar-v0')
@@ -36,9 +37,9 @@ if __name__ == "__main__":
                        )
         e_model = Enet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=1, seed=seed)
+                       hidden_size=512, num_hidden=2, seed=seed)
 
-        rews, num_episodes = train_with_e_learning(env,model, e_model,
+        rews, num_episodes, history = train_with_e_learning(env,model, e_model,
                                    add_ucb=ucb,
                                    seed=seed,
                                    beta=1000,
@@ -51,7 +52,10 @@ if __name__ == "__main__":
                                    update_freq_in_steps=200,
                                    print_freq=10,
                                    **common_params,
-                                   **params)
+                                   **params,
+                                   return_states=True)
+        results[i] = rews
+        all_history.append(history)
         results[i] = rews
 
         filename = 'mountain_car'
@@ -62,5 +66,9 @@ if __name__ == "__main__":
                 filename += '_zeros'
             else:
                 filename += '_ones'
+
         dir = os.path.dirname(os.path.abspath(__file__))
-        np.save(dir+'/results/dqn_environments/'+filename, results)
+        np.save(dir + '/results/dqn_environments/' + filename, results)
+
+        filename = filename+'_history'
+        np.save(dir + '/results/dqn_environments/' + filename, np.concatenate(all_history))

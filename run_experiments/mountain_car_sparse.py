@@ -28,11 +28,11 @@ if __name__ == "__main__":
         env = SparseMountainCar()
         model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=1)
+                       hidden_size=512, num_hidden=2)
 
         rews, num_episodes = train(env,model,
                                    seed=seed,
-                                   replay_buffer_size=1e+6,
+                                   replay_buffer_size=1e+5,
                                    batch_size=64,
                                    learning_starts_in_steps=500,
                                    max_steps=200*max_num_episodes,

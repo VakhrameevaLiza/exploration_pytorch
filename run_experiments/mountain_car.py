@@ -21,6 +21,7 @@ if __name__ == "__main__":
 
     max_num_episodes = 5000
     results = np.zeros((len(seed_range), max_num_episodes))
+    all_history = []
 
     for i, seed in enumerate(seed_range):
         env = gym.make('MountainCar-v0')
@@ -29,20 +30,27 @@ if __name__ == "__main__":
                        hidden_size=512, num_hidden=2, seed=seed,
                        activation_type='relu')
 
-        rews, num_episodes = train(env,model,
-                                   seed=seed,
-                                   replay_buffer_size=1e+5,
-                                   batch_size=64,
-                                   learning_starts_in_steps=500,
-                                   max_steps=200*max_num_episodes,
-                                   max_num_episodes=max_num_episodes,
-                                   train_freq_in_steps=5,
-                                   update_freq_in_steps=200,
-                                   **common_params,
-                                   **params)
+        rews, num_episodes, history = train(env,model,
+                                               seed=seed,
+                                               replay_buffer_size=1e+5,
+                                               batch_size=64,
+                                               learning_starts_in_steps=500,
+                                               max_steps=200*max_num_episodes,
+                                               max_num_episodes=max_num_episodes,
+                                               train_freq_in_steps=5,
+                                               update_freq_in_steps=200,
+                                               **common_params,
+                                               **params,
+                                               return_states=True)
+
+        all_history.append(history)
         results[i] = rews
 
         dir = os.path.dirname(os.path.abspath(__file__))
         filename = 'mountain_car'
         np.save(dir+'/results/dqn_environments/'+filename, results)
+
+        filename = 'mountain_car_history'
+        np.save(dir+'/results/dqn_environments/'+filename, np.concatenate(all_history))
+
     #16:51
