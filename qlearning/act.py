@@ -5,14 +5,17 @@ import torch
 def epsilon_greedy_act(num_actions, state, model, eps_t, ucb=None, log_file=None):
     state_var = convert_to_var(state, add_dim=True)
 
-    q_values = model.forward(state_var)#.cpu().data.numpy()[0]
-
+    if torch.cuda.is_available():
+        q_values = model.forward(state_var).cpu().data.numpy()[0]
+    else:
+        q_values = model.forward(state_var).data.numpy()[0]
+        
     if ucb is not None:
         q_values += convert_to_var(ucb, add_dim=True)
     if np.random.rand() < eps_t:
         action = np.random.randint(num_actions)
     else:
-        action = torch.argmax(q_values, dim=1)[0] #q_values.argmax()
+        action = np.argmax(q_values)
     return action
 
 
