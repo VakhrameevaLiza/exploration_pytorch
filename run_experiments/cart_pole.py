@@ -24,7 +24,8 @@ if __name__ == "__main__":
         env = gym.make('CartPole-v0')
         model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=2, seed=seed)
+                       hidden_size=64, num_hidden=1, seed=seed,
+                       )
 
         rews, num_episodes = train(env,model,
                                    seed=seed,

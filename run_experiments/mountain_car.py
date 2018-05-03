@@ -25,12 +25,13 @@ if __name__ == "__main__":
         env = gym.make('MountainCar-v0')
         model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=1, seed=seed)
+                       hidden_size=512, num_hidden=1, seed=seed,
+                       activation_type='tanh')
 
         rews, num_episodes = train(env,model,
                                    seed=seed,
-                                   replay_buffer_size=1e+6,
-                                   batch_size=256,
+                                   replay_buffer_size=1e+5,
+                                   batch_size=64,
                                    learning_starts_in_steps=500,
                                    max_steps=200*max_num_episodes,
                                    max_num_episodes=max_num_episodes,

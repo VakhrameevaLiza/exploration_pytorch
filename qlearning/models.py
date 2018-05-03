@@ -6,16 +6,21 @@ import torch.nn.functional as F
 class Qnet(nn.Module):
     def __init__(self, num_actions, input_dim,
                  num_hidden=2, hidden_size=512,
-                 set_weights=False, zeros=True, seed=None):
+                 set_weights=False, zeros=True, seed=None,
+                 activation_type='relu'):
         super().__init__()
         if seed is not None:
             torch.manual_seed(seed)
+        if activation_type == 'relu':
+            activation = nn.ReLU()
+        else:
+            activation = nn.Tanh()
         layers = []
         layers.append(nn.Linear(input_dim, hidden_size))
-        layers.append(nn.ReLU())
+        layers.append(activation)
         for i in range(num_hidden):
             layers.append(nn.Linear(hidden_size, hidden_size))
-            layers.append(nn.ReLU())
+            layers.append(activation)
         layers.append(nn.Linear(hidden_size, num_actions))
         self.net = nn.Sequential(*layers)
         if torch.cuda.is_available():
@@ -42,16 +47,21 @@ class Qnet(nn.Module):
 
 class Enet(nn.Module):
     def __init__(self, num_actions, input_dim,
-                 num_hidden=2, hidden_size=512, seed=None):
+                 num_hidden=2, hidden_size=512, seed=None,
+                 activation_type ='relu'):
         super().__init__()
         if seed is not None:
             torch.manual_seed(seed)
+        if activation_type == 'relu':
+            activation = nn.ReLU()
+        else:
+            activation = nn.Tanh()
         layers = []
         layers.append(nn.Linear(input_dim, hidden_size))
-        layers.append(nn.ReLU())
+        layers.append(activation)
         for i in range(num_hidden):
             layers.append(nn.Linear(hidden_size, hidden_size))
-            layers.append(nn.ReLU())
+            layers.append(activation)
         layers.append(nn.Linear(hidden_size, num_actions))
         layers.append(nn.Sigmoid())
         self.net = nn.Sequential(*layers)
