@@ -1,6 +1,6 @@
 from qlearning.train import train, train_with_e_learning
 from qlearning.models import Qnet, Enet
-import gym
+import os
 import numpy as np
 from sparse_environments.sparse_environments import SparseAcrobot, SparseMountainCar
 batch_size = 32
@@ -54,8 +54,7 @@ if __name__ == "__main__":
         results[i] = rews
 
         filename = 'mountain_car_sparse'
-        if 'lll' in act_type:
-            filename += '_lll'
+        dir = os.path.dirname(os.path.abspath(__file__))
         if ucb:
             filename += '_ucb'
         if set_weights:
@@ -64,4 +63,4 @@ if __name__ == "__main__":
             else:
                 filename += '_ones'
 
-        np.save('../results/dqn_environments/'+filename, results)
+        np.save(dir+'/results/dqn_environments/'+filename, results)

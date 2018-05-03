@@ -2,6 +2,7 @@ from qlearning.train import train
 from qlearning.models import Qnet
 import gym
 import numpy as np
+import os
 
 batch_size = 32
 
@@ -39,5 +40,7 @@ if __name__ == "__main__":
                                    **common_params,
                                    **params)
         results[i] = rews
-
-    #np.save('../results/dqn_environments/cartpole', results)
+        filename = 'cartpole'
+        dir = os.path.dirname(os.path.abspath(__file__))
+        np.save(dir+'/results/dqn_environments/'+filename,
+                results)

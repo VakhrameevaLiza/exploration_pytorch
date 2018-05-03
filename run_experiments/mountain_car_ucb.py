@@ -2,6 +2,7 @@ from qlearning.train import train, train_with_e_learning
 from qlearning.models import Qnet, Enet
 import gym
 import numpy as np
+import os
 
 batch_size = 32
 
@@ -53,9 +54,7 @@ if __name__ == "__main__":
                                    **params)
         results[i] = rews
 
-        filename = 'mountaincar'
-        if 'lll' in act_type:
-            filename += '_lll'
+        filename = 'mountain_car'
         if ucb:
             filename += '_ucb'
         if set_weights:
@@ -63,5 +62,5 @@ if __name__ == "__main__":
                 filename += '_zeros'
             else:
                 filename += '_ones'
-
-        np.save('../results/dqn_environments/'+filename, results)
+        dir = os.path.dirname(os.path.abspath(__file__))
+        np.save(dir+'/results/dqn_environments/'+filename, results)

@@ -2,6 +2,7 @@ from qlearning.train import train, train_with_e_learning
 from qlearning.models import Qnet, Enet
 from tabular_environments.chain_environment import SimpleChain
 import numpy as np
+import os
 
 batch_size = 32
 
@@ -51,8 +52,8 @@ if __name__ == "__main__":
                                            chain_criterion=True,
                                            **params)
                 results[i][j] = num_episodes
-        dir = '../results/dqn_environments/deep_chain/'
-        file_name = dir + 'eps_greedy'
-        if ucb:
-            file_name += '_ucb'
-        np.save(file_name, results)
+            dir = os.path.dirname(os.path.abspath(__file__))
+            filename ='eps_greedy'
+            if ucb:
+                filename += '_ucb'
+            np.save(dir + '/results/dqn_environments/deep_chain/' + filename, results)

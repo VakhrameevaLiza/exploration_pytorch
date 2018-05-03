@@ -1,6 +1,6 @@
 from qlearning.train import train
 from qlearning.models import Qnet
-import gym
+import os
 import numpy as np
 import torch
 
@@ -44,5 +44,6 @@ if __name__ == "__main__":
                                    **common_params,
                                    **params)
         results[i] = rews
-
-    np.save('sparse_acrobot_low_eps', results)
+        dir = os.path.dirname(os.path.abspath(__file__))
+        filename = 'acrobot_sparse'
+        np.save(dir+'/results/dqn_environments/' + filename, results)

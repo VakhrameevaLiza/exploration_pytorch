@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import gym
+import os
 
 from trpo.agent import TRPOAgent
 from trpo.run import run_trpo
@@ -18,7 +19,7 @@ resutls = run_trpo(env, agent,
                    print_flag=True,
                    log_dir='../logs/half_cheetah')
 
-result_dir = '../results/trpo_environments/'
-env_name = 'half_cheetah_rewards'
+result_dir = os.path.dirname(os.path.abspath(__file__)) + '/results/trpo_environments/'
+env_name = 'half_cheetah'
 np.save(result_dir+env_name, resutls)
 torch.save(agent.policy.state_dict(), result_dir+'half_cheetah_model')

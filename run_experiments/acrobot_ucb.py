@@ -2,6 +2,7 @@ from qlearning.train import train, train_with_e_learning
 from qlearning.models import Qnet, Enet
 import gym
 import numpy as np
+import os
 
 batch_size = 32
 
@@ -30,12 +31,12 @@ if __name__ == "__main__":
         env = gym.make('Acrobot-v1')
         model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=1024, num_hidden=2,
+                       hidden_size=512, num_hidden=1,
                        set_weights=set_weights, zeros=zeros, seed=seed
                        )
         e_model = Enet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=1024, num_hidden=2, seed=seed)
+                       hidden_size=512, num_hidden=1, seed=seed)
 
         rews, num_episodes = train_with_e_learning(env,model, e_model,
                                    add_ucb=ucb,
@@ -53,15 +54,15 @@ if __name__ == "__main__":
                                    **params)
         results[i] = rews
 
-    filename = 'acrobot-test'
-    if 'lll' in act_type:
-        filename += '_lll'
-    if ucb:
-        filename += '_ucb'
-    if set_weights:
-        if zeros:
-            filename += '_zeros'
-        else:
-            filename += '_ones'
+        filename = 'acrobot'
+        if ucb:
+            filename += '_ucb'
+        if set_weights:
+            if zeros:
+                filename += '_zeros'
+            else:
+                filename += '_ones'
 
-    np.save('../results/dqn_environments/'+filename, results)
+        dir = os.path.dirname(os.path.abspath(__file__))
+        np.save(dir+'/results/dqn_environments/'+filename,
+                results)

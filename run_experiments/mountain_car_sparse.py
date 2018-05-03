@@ -2,6 +2,7 @@ from qlearning.train import train
 from qlearning.models import Qnet
 import gym
 import numpy as np
+import os
 
 from sparse_environments.sparse_environments import SparseMountainCar
 
@@ -42,5 +43,6 @@ if __name__ == "__main__":
                                    **params)
         results[i] = rews
 
-        np.save('../results/dqn_environments/mountain_car_sparse', results)
-    #16:51
+        filename = 'mountain_car_sparse'
+        dir = os.path.dirname(os.path.abspath(__file__))
+        np.save(dir+'/results/dqn_environments/'+filename, results)

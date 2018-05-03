@@ -3,6 +3,7 @@ from qlearning.models import Qnet
 import gym
 import numpy as np
 import torch
+import os
 
 batch_size = 32
 
@@ -45,4 +46,6 @@ if __name__ == "__main__":
                                    **params)
         results[i] = rews
 
-    np.save('../results/dqn_environments/acrobot', results)
+        filename = 'acrobot'
+        dir = os.path.dirname(os.path.abspath(__file__))
+        np.save(dir+'/results/dqn_environments/'+filename, results)
