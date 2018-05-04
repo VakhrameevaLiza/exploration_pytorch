@@ -10,8 +10,8 @@ if __name__ == "__main__":
     np.random.seed(42)
     seed_range = [np.random.randint(1000) for _ in range(3)]
 
-    eps_params = {'exploration_fraction': 0.25,
-                  'exploration_final_eps': 0.01}
+    eps_params = {'exploration_fraction': 0.1,
+                  'exploration_final_eps': 0.05}
 
     common_params = dict(gamma=0.99, write_logs=False,
                          target_type='standard_q_learning')
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         env = gym.make('MountainCar-v0')
         model = Qnet(env.action_space.n,
                        env.observation_space.shape[0],
-                       hidden_size=512, num_hidden=1,
+                       hidden_size=512, num_hidden=2,
                        set_weights=set_weights, zeros=zeros, seed=seed
                        )
         e_model = Enet(env.action_space.n,
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         rews, num_episodes, history = train_with_e_learning(env,model, e_model,
                                    add_ucb=ucb,
                                    seed=seed,
-                                   beta=1000,
+                                   beta=10000,
                                    replay_buffer_size=1e+5,
                                    batch_size=64,
                                    learning_starts_in_steps=500,

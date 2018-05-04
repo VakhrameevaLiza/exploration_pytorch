@@ -429,8 +429,13 @@ def train_with_e_learning(env, model, e_model,
         eps_t = eps_shedule.value(episode+1) if eps_shedule else 0
 
         if add_ucb:
-            e_values = e_model.forward(convert_to_var(state)).data.numpy()
-            q_values = e_model.forward(convert_to_var(state)).data.numpy()
+            if torch.cuda.is_available():
+                e_values = e_model.forward(convert_to_var(state)).cpu().data.numpy()
+                q_values = model.forward(convert_to_var(state)).cpu().data.numpy()
+            else:
+                e_values = e_model.forward(convert_to_var(state)).data.numpy()
+                q_values = model.forward(convert_to_var(state)).data.numpy()
+            
             cnt = np.log(e_values) / np.log(1-e_lr) + np.log(2) / np.log(1-e_lr)
             ucb = np.sqrt(2 * np.log(t) / cnt)
             ucb *= beta
@@ -449,7 +454,10 @@ def train_with_e_learning(env, model, e_model,
             #max_episode_state = max(max_episode_state, env.convert_state_to_id(state))
             next_state, rew, done, _ = env.step(action)
             if add_bonus:
-                e_values = e_model.forward(convert_to_var(state)).data.numpy()
+                if torch.cuda.is_available():
+                    e_values = e_model.forward(convert_to_var(state)).cpu().data.numpy()
+                else:
+                    e_values = e_model.forward(convert_to_var(state)).data.numpy()
                 cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1 - e_lr)
                 rew_ = rew + beta / cnt[action]
             else:
@@ -461,19 +469,20 @@ def train_with_e_learning(env, model, e_model,
             t += 1
 
             if add_ucb and t>learning_starts_in_steps:
-                q_values = model.forward(convert_to_var(state)).data.numpy()
-                e_values = e_model.forward(convert_to_var(state)).data.numpy()
-                #print(np.round(e_values,3), np.round(q_values, 3))
+                if torch.cuda.is_available():
+                    e_values = e_model.forward(convert_to_var(state)).cpu().data.numpy()
+                    q_values = model.forward(convert_to_var(state)).cpu().data.numpy()
+                else:
+                    e_values = e_model.forward(convert_to_var(state)).data.numpy()
+                    q_values = model.forward(convert_to_var(state)).data.numpy()
                 cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1-e_lr)
                 ucb = np.sqrt(2 * np.log(t) / cnt)
                 ucb *= beta
                 if q_values.argmax() != (q_values+ucb).argmax():
                     t_ucb_max = t
                     ucb_work += 1
-                    #print('+', np.round(e_values, 2), np.round(ucb,2), np.round(q_values, 3))
                 else:
                     pass
-                    #print('-', np.round(e_values, 2), np.round(ucb,2), np.round(q_values, 3))
             else:
                 ucb = None
             if act_type == 'epsilon_greedy':
