@@ -314,6 +314,7 @@ def train(env, model,
                       format(t, num_episodes, sum_rewards_per_episode[-1], eps_t))
             num_episodes += 1
             sum_rewards_per_episode.append(0)
+            state_history.append(next_state)
             state = env.reset()
 
         if len(sum_rewards_per_episode) > max_num_episodes:
@@ -450,8 +451,6 @@ def train_with_e_learning(env, model, e_model,
         episode_steps = 0
         max_episode_state = 0
         while True:
-            #max_state = max(max_state, env.convert_state_to_id(state))
-            #max_episode_state = max(max_episode_state, env.convert_state_to_id(state))
             next_state, rew, done, _ = env.step(action)
             if add_bonus:
                 if torch.cuda.is_available():
@@ -526,6 +525,7 @@ def train_with_e_learning(env, model, e_model,
 
                 num_episodes += 1
                 sum_rewards_per_episode.append(0)
+                state_history.append(next_state)
                 state = env.reset()
                 break
 
