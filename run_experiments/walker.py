@@ -23,6 +23,6 @@ result_dir = '../results/trpo_environments/'
 
 filename = 'walker'
 dir = os.path.dirname(os.path.abspath(__file__))
-np.save(dir + '/results/dqn_environments/' + filename, results)
+np.save(dir + '/results/trpo_environments/' + filename, results)
 
 torch.save(agent.policy.state_dict(), result_dir+'walker_model')

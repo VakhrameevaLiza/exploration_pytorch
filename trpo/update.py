@@ -39,7 +39,11 @@ def update_step(agent, optimizer, observations, actions,
     optimizer.step()
 
     grads = torch.autograd.grad(loss, agent.policy.parameters())
-    loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
+
+    if torch.cuda.is_available():
+        loss_grad = torch.cat([grad.view(-1) for grad in grads]).cpu().data
+    else:
+        loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
 
     def Fvp(v):
         # Here we compute Fx to do solve Fx = g using conjugate gradients
@@ -54,7 +58,10 @@ def update_step(agent, optimizer, observations, actions,
 
         kl_v = (flat_grad_kl * convert_to_var(v.numpy())).sum()
         grads = torch.autograd.grad(kl_v, agent.policy.parameters())
-        flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
+        if torch.cuda.is_available():
+            flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).cpu().data
+        else:
+            flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
 
         return flat_grad_grad_kl + v * 0.1
 

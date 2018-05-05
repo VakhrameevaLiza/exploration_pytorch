@@ -1,5 +1,6 @@
 import torch
 from torch.autograd import Variable
+import torch.nn as nn
 from helpers.convert_to_var_foo import convert_to_var
 import numpy as np
 
@@ -11,12 +12,6 @@ def get_loss(agent, observations, actions, cummulative_returns,
 
     values = agent.get_values(observations)[:, 0]
     advantage = cummulative_returns - values
-
-    #print('Loss')
-    #print('probs_for_actions', probs_for_actions.shape)
-    #print('old_probs_for_actions', old_probs_for_actions.shape)
-    #print('advantage', advantage.shape)
-
     Loss = -1 * torch.mean(probs_for_actions / old_probs_for_actions * advantage)
     MSELoss = torch.nn.MSELoss()
 
@@ -24,11 +19,8 @@ def get_loss(agent, observations, actions, cummulative_returns,
 
 
 def get_discrete_kl(agent, observations, old_probs):
-    #print('get_discrete_kl')
     old_log_probs = torch.log(old_probs + 1e-10)
     log_probs = agent.get_log_probs(observations)
-    #print('old_log_probs', old_log_probs.shape)
-    #print('log_probs', log_probs.shape)
     kl = torch.mean(torch.sum(old_probs * (old_log_probs - log_probs), dim=1))
 
     assert kl.shape == torch.Size([1])
@@ -69,3 +61,29 @@ def get_normal_entropy(agent, observations):
     entropy = 0.5 * torch.mean(
                           torch.sum(torch.log(2 * np.pi * np.e * var), dim=1))
     return entropy
+
+
+def sarsa_loss(optimizer, model, target_model, batch, gamma):
+    states, actions, rewards, dones, next_states, next_actions = batch
+
+    states = convert_to_var(states)
+    actions = convert_to_var(actions[:, np.newaxis], astype='int64')
+    rewards = convert_to_var(rewards)
+    next_states = convert_to_var(next_states)
+    next_actions = convert_to_var(next_actions[:, np.newaxis], astype='int64')
+    dones = convert_to_var(dones)
+
+    rewards = torch.zeros_like(rewards)
+
+    e_values = model.forward(states).gather(1, actions)[:,0]
+    next_e_values = target_model.forward(next_states).gather(1, next_actions).detach()[:,0]
+    next_e_values[dones.byte()] = 0
+
+    target_e_values = rewards + gamma * next_e_values
+
+    mse_loss_func = nn.MSELoss()
+    loss = mse_loss_func(e_values, target_e_values)
+    optimizer.zero_grad()
+    loss.backward()
+
+    optimizer.step()

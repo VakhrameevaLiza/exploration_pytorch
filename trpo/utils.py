@@ -27,45 +27,6 @@ def get_cummulative_returns(r, gamma=1):
     return scipy.signal.lfilter([1], [1, -gamma], r[::-1], axis=0)[::-1]
 
 
-def rollout(env, agent, max_pathlength=2500, n_timesteps=50000):
-    paths = []
-
-    total_timesteps = 0
-    while total_timesteps < n_timesteps:
-        obervations, actions, rewards, probs_for_actions = [], [], [], []
-        mus, logvars, policies = [], [], []
-        obervation = env.reset()
-        for _ in range(max_pathlength):
-            if agent.discrete_type:
-                action, action_prob, probs = agent.act(obervation)
-                policies.append(probs)
-            else:
-                action, action_prob, mu, logvar = agent.act(obervation)
-                mus.append(mu)
-                logvars.append(logvar)
-
-            obervations.append(obervation)
-            actions.append(action)
-            probs_for_actions.append(action_prob)
-
-            obervation, reward, done, _ = env.step(action)
-            rewards.append(reward)
-            total_timesteps += 1
-            if done or total_timesteps==n_timesteps:
-                path = {"observations": np.array(obervations),
-                        "policies":  np.array(policies),
-                        "mus": np.array(mus),
-                        "logvars": np.array(logvars),
-                        "probs_for_actions": np.array(probs_for_actions),
-                        "actions": np.array(actions),
-                        "rewards": np.array(rewards),
-                        "cumulative_returns":get_cummulative_returns(rewards),
-                       }
-                paths.append(path)
-                break
-    return paths
-
-
 def linesearch(f, x, fullstep, max_kl):
     """
     Linesearch finds the best parameters of neural networks in the direction of fullstep contrainted by KL divergence.

@@ -6,7 +6,7 @@ import os
 from trpo.agent import TRPOAgent
 from trpo.run import run_trpo
 
-env = gym.make('Swimmer-v2')
+env = gym.make('HalfCheetah-v2')
 
 agent = TRPOAgent(state_shape=env.observation_space.shape,
                   action_shape=env.action_space.shape,
