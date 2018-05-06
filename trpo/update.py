@@ -41,9 +41,9 @@ def update_step(agent, optimizer, observations, actions,
     grads = torch.autograd.grad(loss, agent.policy.parameters())
 
     if torch.cuda.is_available():
-        loss_grad = torch.cat([grad.view(-1) for grad in grads]).cpu().data
-    else:
         loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
+    else:
+        loss_grad = torch.cat([grad.view(-1) for grad in grads]).cpu().data
 
     def Fvp(v):
         # Here we compute Fx to do solve Fx = g using conjugate gradients
@@ -56,13 +56,16 @@ def update_step(agent, optimizer, observations, actions,
         grads = torch.autograd.grad(kl, agent.policy.parameters(), create_graph=True)
         flat_grad_kl = torch.cat([grad.view(-1) for grad in grads])
 
-        kl_v = (flat_grad_kl * convert_to_var(v.numpy())).sum()
-        grads = torch.autograd.grad(kl_v, agent.policy.parameters())
         if torch.cuda.is_available():
-            flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).cpu().data
-        else:
+            flat_grad_kl = flat_grad_kl.cuda()
+            kl_v = (flat_grad_kl * convert_to_var(v.cpu().numpy())).sum()
+            grads = torch.autograd.grad(kl_v, agent.policy.parameters())
             flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
-
+        else:
+            kl_v = (flat_grad_kl * convert_to_var(v.numpy())).sum()
+            grads = torch.autograd.grad(kl_v, agent.policy.parameters())
+            flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
+                            
         return flat_grad_grad_kl + v * 0.1
 
     # Here we solveolve Fx = g system using conjugate gradients
@@ -88,7 +91,6 @@ def update_step(agent, optimizer, observations, actions,
         else:
             kl = get_normal_kl(agent, observations, (old_mu, old_logvar))
         return loss, kl
-
     # Here we find our new parameters
     new_params = linesearch(get_loss_kl, prev_params, fullstep, max_kl)
 

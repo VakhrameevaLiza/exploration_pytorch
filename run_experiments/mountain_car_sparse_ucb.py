@@ -9,8 +9,8 @@ if __name__ == "__main__":
     np.random.seed(42)
     seed_range = [np.random.randint(1000) for _ in range(3)]
 
-    eps_params = {'exploration_fraction': 0.25,
-                  'exploration_final_eps': 0.01}
+    eps_params = {'exploration_fraction': 0.1,
+                  'exploration_final_eps': 0.05}
 
     common_params = dict(gamma=0.99, write_logs=False,
                          target_type='standard_q_learning')
@@ -25,6 +25,8 @@ if __name__ == "__main__":
 
     max_num_episodes = 3000
     results = np.zeros((len(seed_range), max_num_episodes))
+    all_history = []
+
 
     for i, seed in enumerate(seed_range):
         env = SparseMountainCar()
@@ -37,7 +39,7 @@ if __name__ == "__main__":
                        env.observation_space.shape[0],
                        hidden_size=512, num_hidden=2, seed=seed)
 
-        rews, num_episodes = train_with_e_learning(env,model, e_model,
+        rews, num_episodes,history = train_with_e_learning(env,model, e_model,
                                    add_ucb=ucb,
                                    seed=seed,
                                    beta=1000,
@@ -50,8 +52,10 @@ if __name__ == "__main__":
                                    update_freq_in_steps=200,
                                    print_freq=10,
                                    **common_params,
-                                   **params)
+                                   **params,
+                                   return_states=True)
         results[i] = rews
+        all_history.append(history)
 
         filename = 'mountain_car_sparse'
         dir = os.path.dirname(os.path.abspath(__file__))
@@ -64,3 +68,6 @@ if __name__ == "__main__":
                 filename += '_ones'
 
         np.save(dir+'/results/dqn_environments/'+filename, results)
+        
+        filename = filename+'_history'
+        np.save(dir+'/results/dqn_environments/'+filename, np.concatenate(all_history))

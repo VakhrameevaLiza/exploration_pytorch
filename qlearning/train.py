@@ -291,7 +291,11 @@ def train(env, model,
         sum_rewards_per_episode[-1] += rew
         list_rewards_per_episode[-1].append(rew)
         state_history.append(state)
-
+        if done:
+            print('DONE')
+            print(state, next_state)
+            print()
+ 
         state = next_state
 
         if t > learning_starts_in_steps and t % train_freq_in_steps == 0:
@@ -314,7 +318,8 @@ def train(env, model,
                       format(t, num_episodes, sum_rewards_per_episode[-1], eps_t))
             num_episodes += 1
             sum_rewards_per_episode.append(0)
-            state_history.append(next_state)
+
+
             state = env.reset()
 
         if len(sum_rewards_per_episode) > max_num_episodes:
@@ -525,6 +530,9 @@ def train_with_e_learning(env, model, e_model,
 
                 num_episodes += 1
                 sum_rewards_per_episode.append(0)
+                print('DONE')
+                print(state, next_state)
+                print()
                 state_history.append(next_state)
                 state = env.reset()
                 break
