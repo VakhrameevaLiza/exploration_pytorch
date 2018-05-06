@@ -41,7 +41,7 @@ if __name__ == "__main__":
         rews, num_episodes = train_with_e_learning(env,model, e_model,
                                    add_ucb=ucb,
                                    seed=seed,
-                                   beta=100,
+                                   beta=500,
                                    replay_buffer_size=1e+5,
                                    batch_size=64,
                                    learning_starts_in_steps=500,
