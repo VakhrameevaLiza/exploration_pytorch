@@ -23,6 +23,7 @@ if __name__ == "__main__":
 
     max_num_episodes = 3000
     results = np.zeros((len(seed_range), max_num_episodes))
+    all_history = []
 
     for i, seed in enumerate(seed_range):
         env = SparseMountainCar()
@@ -30,7 +31,7 @@ if __name__ == "__main__":
                        env.observation_space.shape[0],
                        hidden_size=512, num_hidden=2)
 
-        rews, num_episodes = train(env,model,
+        rews, num_episodes, history = train(env,model,
                                    seed=seed,
                                    replay_buffer_size=1e+5,
                                    batch_size=64,
@@ -40,9 +41,14 @@ if __name__ == "__main__":
                                    train_freq_in_steps=5,
                                    update_freq_in_steps=200,
                                    **common_params,
-                                   **params)
+                                   **params,
+                                   return_states=True)
         results[i] = rews
+        all_history.append(history)
 
         filename = 'mountain_car_sparse'
         dir = os.path.dirname(os.path.abspath(__file__))
         np.save(dir+'/results/dqn_environments/'+filename, results)
+        
+        filename = 'mountain_car_sparse_history'
+        np.save(dir+'/results/dqn_environments/'+filename, np.concatenate(all_history))

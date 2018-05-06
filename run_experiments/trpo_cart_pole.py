@@ -11,7 +11,7 @@ env = gym.make('CartPole-v0')
 np.random.seed(42)
 seed_range = [np.random.randint(1000) for _ in range(3)]
 max_steps = 40
-num_episodes_per_rollout = 10
+num_episodes_per_rollout = 20
 
 results = np.zeros((len(seed_range), max_steps))
 

@@ -10,7 +10,7 @@ env = gym.make('MountainCar-v0')
 
 np.random.seed(42)
 seed_range = [np.random.randint(1000) for _ in range(3)]
-max_steps = 500
+max_steps = 2000
 num_episodes_per_rollout = 50
 
 results = np.zeros((len(seed_range), max_steps))

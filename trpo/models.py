@@ -28,7 +28,10 @@ class DiscretePolicy(nn.Module):
         log_probs = self.model(states)
         probs_all = torch.exp(log_probs)
         batch_size = states.shape[0]
-        probs_for_actions = probs_all[torch.arange(0, batch_size, out=torch.LongTensor()), actions]
+        if torch.cuda.is_available():
+            probs_for_actions = probs_all[torch.arange(0, batch_size, out=torch.cuda.LongTensor()), actions]
+        else:
+            probs_for_actions = probs_all[torch.arange(0, batch_size, out=torch.LongTensor()), actions]
         return probs_for_actions
 
 

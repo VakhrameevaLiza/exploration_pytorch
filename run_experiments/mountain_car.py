@@ -11,7 +11,7 @@ if __name__ == "__main__":
     seed_range = [np.random.randint(1000) for _ in range(3)]
 
     eps_params = {'exploration_fraction': 0.25,
-                  'exploration_final_eps': 0.01}
+                  'exploration_final_eps': 0.05}
 
     common_params = dict(gamma=0.99, write_logs=False,
                          log_dir='logs/mountain_car',

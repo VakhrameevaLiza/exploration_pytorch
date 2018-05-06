@@ -11,8 +11,8 @@ env = gym.make('Acrobot-v1')
 
 np.random.seed(42)
 seed_range = [np.random.randint(1000) for _ in range(3)]
-max_steps = 10
-num_episodes_per_rollout = 2
+max_steps = 100
+num_episodes_per_rollout = 50
 
 results = np.zeros((len(seed_range), max_steps))
 

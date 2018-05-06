@@ -39,10 +39,18 @@ def linesearch(f, x, fullstep, max_kl):
     max_backtracks = 10
     loss, _, = f(x)
     for stepfrac in .5**np.arange(max_backtracks):
-        xnew = x + stepfrac * fullstep
+        xnew = x + (stepfrac * fullstep).cuda()
         new_loss, kl = f(xnew)
         actual_improve = new_loss - loss
-        if kl.data.numpy()<=max_kl and actual_improve.data.numpy() < 0:
+        
+        if torch.cuda.is_available():
+            kl = kl.cpu().data.numpy()
+            actual_improve = actual_improve.cpu().data.numpy()
+        else:
+            kl = kl.data.numpy()
+            actual_improve = actual_improve.data.numpy()
+        
+        if kl<=max_kl and actual_improve< 0:
             x = xnew
             loss = new_loss
     return x
@@ -59,7 +67,10 @@ def conjugate_gradient(f_Ax, b, cg_iters=10, residual_tol=1e-10):
     """
     p = b.clone()
     r = b.clone()
-    x = torch.zeros(b.size())
+    if torch.cuda.is_available():
+        x = torch.zeros(b.size()).cuda()
+    else:
+        x = torch.zeros(b.size())
     rdotr = torch.sum(r*r)
     for i in range(cg_iters):
         z = f_Ax(p)
