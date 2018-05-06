@@ -36,7 +36,7 @@ class DiscretePolicy(nn.Module):
 
 
 class ContinuousPolicy(nn.Module):
-    def __init__(self, action_dim, input_dim, num_hidden=1, hidden_size=512):
+    def __init__(self, action_dim, input_dim, num_hidden=2, hidden_size=512):
         super().__init__()
         layers = list()
         layers.append(nn.Linear(input_dim, hidden_size))
@@ -73,15 +73,20 @@ class ContinuousPolicy(nn.Module):
 
 
 class ValueFunction(nn.Module):
-    def __init__(self, state_shape, hidden_size=250):
+    def __init__(self, state_shape, hidden_size=250, num_hidden=2):
         nn.Module.__init__(self)
-        self.model = nn.Sequential(nn.Linear(state_shape[-1], hidden_size),
-                                   nn.ReLU(),
-                                   nn.Linear(hidden_size, hidden_size),
-                                   nn.ReLU(),
-                                   nn.Linear(hidden_size, 1))
+        layers = list()
+        layers.append(nn.Linear(state_shape[-1], hidden_size))
+        layers.append(nn.ReLU())
+        for i in range(num_hidden):
+            layers.append(nn.Linear(hidden_size, hidden_size))
+            layers.append(nn.ReLU())
+        layers.append(nn.Linear(hidden_size, 1))
+        self.model = nn.Sequential(*layers)
+
         if torch.cuda.is_available():
             self.model = self.model.cuda()
+            
     def forward(self, states):
         values = self.model(states)
         return values
