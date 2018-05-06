@@ -464,6 +464,7 @@ def train_with_e_learning(env, model, e_model,
                     e_values = e_model.forward(convert_to_var(state)).data.numpy()
                 cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1 - e_lr)
                 rew_ = rew + beta / cnt[action]
+                print(beta / cnt[action])
             else:
                 rew_ = rew
 
