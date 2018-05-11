@@ -83,7 +83,7 @@ def rollout_with_e_learning(env, agent, e_learning, num_episodes):
                 e_values = e_learning.model.forward(convert_to_var(observation)).data.numpy()
             cnt = np.log(e_values) / np.log(1 - e_lr) + np.log(2) / np.log(1 - e_lr)
             reward_ = reward + beta * 1 / (cnt[action]+1e-6)
-            #print(beta * 1 / (cnt[action]+1e-6))
+
             rewards.append(reward)
             rewards_.append(reward_)
             dones.append(done)

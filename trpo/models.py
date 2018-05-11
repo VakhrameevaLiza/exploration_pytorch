@@ -86,7 +86,7 @@ class ValueFunction(nn.Module):
 
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-            
+
     def forward(self, states):
         values = self.model(states)
         return values

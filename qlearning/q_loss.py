@@ -56,12 +56,7 @@ def sarsa_loss(optimizer, model, target_model, batch, gamma):
     next_e_values = target_model.forward(next_states).gather(1, next_actions).detach()[:,0]
     next_e_values[dones.byte()] = 0
 
-    #print("e_values", e_values.shape)
-    #print("next_e_values", next_e_values.shape)
-    #print("rewards", rewards.shape)
-
     target_e_values = rewards + gamma * next_e_values
-
     mse_loss_func = nn.MSELoss()
     loss = mse_loss_func(e_values, target_e_values)
     optimizer.zero_grad()

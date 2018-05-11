@@ -35,7 +35,7 @@ class SimpleChain(TabularEnvBase):
         self.reward += reward
         self.cur_state_descr = self.convert_ns_to_description(state_id=self.cur_state_id)
 
-        if self.count_steps == self.ns + 9:
+        if self.count_steps == self.ns+9:
             done = True
         else:
             done = False

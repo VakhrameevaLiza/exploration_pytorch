@@ -2,6 +2,12 @@ import os, shutil
 import matplotlib.pyplot as plt
 import numpy as np
 
+from matplotlib import rc
+
+font = {'family': 'Verdana',
+        'weight': 'normal'}
+rc('font', **font)
+
 
 def plot_and_log_images(state_action_count, all_q_values, t, folder):
     fig = plt.figure(figsize=(10, 6))
@@ -51,6 +57,31 @@ def plot_q_func_and_visitations(episode_state_action_count,
     plt.bar(bar_locations, episode_state_action_count.sum(axis=1), color='gray', alpha=0.75)
     plt.title('Episode states count')
 
+
+    plt.savefig(dir_img + '/episode:{}, step:{}.png'.format(num_episodes, t))
+    plt.close(fig)
+
+
+def plot_visitations_with_e_values(state_action_count, all_e_values, e_counts,
+                                   num_episodes, t, dir_img):
+    h, w = 1,5
+    fig = plt.figure(figsize=(16,6))
+    fontsize = 20
+
+    ax = plt.subplot2grid((h,w), (0,1), rowspan=2)
+    plt.imshow(state_action_count)
+    plt.colorbar()
+    plt.title('Наблюдаемые\n счетчики', fontsize=fontsize)
+
+    ax = plt.subplot2grid((h,w), (0,2), rowspan=2)
+    plt.imshow(all_e_values)
+    plt.colorbar()
+    plt.title('E-значения', fontsize=fontsize)
+
+    ax = plt.subplot2grid((h,w), (0,3), rowspan=2)
+    plt.imshow(e_counts)
+    plt.colorbar()
+    plt.title('E-счетчики', fontsize=fontsize)
 
     plt.savefig(dir_img + '/episode:{}, step:{}.png'.format(num_episodes, t))
     plt.close(fig)
@@ -126,3 +157,13 @@ def plot_q_func_and_visitations_and_policy(total_states_cnt, episode_state_actio
     plt.savefig(dir + '/episode:{}, step:{}.png'.format(num_episodes, t))
     plt.close(fig)
 
+
+
+def plot_corr_hist(corr):
+    fontsize = 20
+    plt.hist(corr, bins=20)
+    plt.xlabel("Коэффициент корреляции Пирсона", fontsize=fontsize)
+    plt.ylabel("Количество эпизодов", fontsize=fontsize)
+    plt.title("Корреляция между E-счетчиками и наблюдаемыми счетчиками", fontsize=fontsize)
+    plt.grid()
+    plt.show()

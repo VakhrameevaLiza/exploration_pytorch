@@ -18,25 +18,19 @@ class TabularEnvBase:
         self.observation_space = ObeservationSpace(self.ns)
         self.one_hot=one_hot
 
+        all_states = np.ones((self.ns, self.ns)) * (np.arange(self.ns)[:, np.newaxis] + 1) / 100
+        self.all_states = (all_states - all_states.mean())
+
         self.cur_state_id = 0
         self.cur_state_descr = self.convert_ns_to_description(state_id=self.cur_state_id)
         self.count_steps = 0
         self.reward = 0
 
     def get_all_states(self):
-        if self.one_hot:
-            all_states = np.eye(self.ns)
-        else:
-            all_states = np.tril(np.ones((self.ns, self.ns)))
-        return all_states
+        return self.all_states
 
     def convert_ns_to_description(self, state_id):
-        state_descr = np.zeros(self.ns)
-        if self.one_hot:
-            state_descr[state_id] = 1
-        else:
-            state_descr[:state_id+1] = 1
-        return state_descr
+        return self.all_states[state_id]
 
     def reset(self):
         self.cur_state_id = 0
@@ -46,17 +40,15 @@ class TabularEnvBase:
         return self.cur_state_descr
 
     def convert_state_to_id(self, s):
-        if self.one_hot:
-            return int(s.argmax())
-        else:
-            return int(s.sum()-1)
+        for i, cur_s in enumerate(self.all_states):
+            if np.array_equal(cur_s, s):
+                return i
 
     def convert_state_to_id_func(self):
         if self.one_hot:
             return lambda x: int(x.argmax())
         else:
             return lambda x: int(x.sum()-1)
-
 
     def seed(self, seed):
         pass

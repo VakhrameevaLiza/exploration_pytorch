@@ -12,10 +12,19 @@ def write_tensorboard_tabular_logs(lcl):
 
     if plot_q_func:
         all_q_values = lcl['model'].forward(all_states_var)
+
         if torch.cuda.is_available():
             all_q_values = all_q_values.cpu().data.numpy()
         else:
             all_q_values = all_q_values.data.numpy()
+
+        all_e_values = lcl['e_model'].forward(all_states_var)
+
+        if torch.cuda.is_available():
+            all_e_values = all_e_values.cpu().data.numpy()
+        else:
+            all_e_values = all_e_values.data.numpy()
+
         for i in range(lcl['n_all_states']):
             if (2 <= i < lcl['n_all_states'] - 2) and lcl['n_all_states'] >= 10:
                 continue
@@ -39,7 +48,7 @@ def write_tensorboard_tabular_logs(lcl):
     if lcl['num_episodes'] % lcl['plot_freq'] == 0 and lcl['done']:
         if plot_q_func:
             plot_q_func_and_visitations(lcl['episode_visitations'],
-                                        lcl['state_action_count'], all_q_values,
+                                        lcl['state_action_count'], all_q_values, all_e_values,
                                         lcl['num_episodes'], lcl['t'], lcl['images_directory'])
 
 

@@ -52,10 +52,12 @@ class Enet(nn.Module):
         super().__init__()
         if seed is not None:
             torch.manual_seed(seed)
-        if activation_type == 'relu':
-            activation = nn.ReLU()
-        else:
+        if activation_type == 'tanh':
             activation = nn.Tanh()
+        elif activation_type == 'sigmoid':
+            activation = nn.Sigmoid()
+        else:
+            activation = nn.ReLU()
         layers = []
         layers.append(nn.Linear(input_dim, hidden_size))
         layers.append(activation)
