@@ -68,7 +68,8 @@ def train_tabular(env, model,
                   reward_shaping_type=None,
                   do_pretraining=False,
                   print_freq=1,
-                  batch_size=32
+                  batch_size=32,
+
                 ):
 
     if seed:
@@ -136,6 +137,9 @@ def train_tabular(env, model,
     episode_visitations = np.zeros((dim_states, num_actions))
     episode_history = []
     state = env.reset()
+    state_history = []
+    state_ids = []
+    count_history = []
     break_flag=False
 
     for t in range(max_steps):
@@ -143,34 +147,36 @@ def train_tabular(env, model,
         alpha_t = alpha_shedule.value(t) if alpha_shedule else 1
 
         if act_type == 'epsilon_greedy':
-            action, flag = epsilon_greedy_act(num_actions, state, model, eps_t)
+            action = epsilon_greedy_act(num_actions, state, model, eps_t)
             entropy = 0
-            episode_history.append((env.convert_state_to_id(state), action, flag))
 
         elif act_type == 'ucb-1':
             s_id = env.convert_state_to_id(state)
             n_s = max(1, state_action_count[s_id].sum())
             n_sa = np.maximum(1, state_action_count[s_id])
             ucb = np.sqrt(2 * np.log(n_s) / n_sa)
-            action, flag = epsilon_greedy_act(num_actions, state, model, eps_t, ucb=alpha_t * ucb)
+            action = epsilon_greedy_act(num_actions, state, model, eps_t, ucb=alpha_t * ucb)
             entropy = 0
 
         elif act_type == 'ucb-2':
             s_id = env.convert_state_to_id(state)
             ucb = 1 / np.sqrt(1 + state_action_count[s_id])
-            action, flag = epsilon_greedy_act(num_actions, state, model, eps_t, ucb=alpha_t * ucb)
+            action = epsilon_greedy_act(num_actions, state, model, eps_t, ucb=alpha_t * ucb)
             entropy = 0
-        env.render()
         next_state, rew, done, _ = env.step(action)
         rew_addition = count_rew_addition(state_action_count,
                                           env.convert_state_to_id(state),
                                           env.convert_state_to_id(next_state),
                                           action, reward_shaping_type)
 
-        replay_buffer.add(state, action, rew + rew_addition, next_state, done)
+        replay_buffer.add(state, action, rew + rew_addition, done, next_state, -1)
 
         state_action_count[env.convert_state_to_id(state)][action] += 1
         episode_visitations[env.convert_state_to_id(state)][action] += 1
+
+        state_history.append(state)
+        count_history.append(state_action_count)
+        state_ids.append(env.convert_state_to_id(state))
 
         if rew == 1:
             count_good_rewards += 1
@@ -205,6 +211,8 @@ def train_tabular(env, model,
             sum_rewards_per_episode.append(0)
             list_rewards_per_episode.append([])
             state = env.reset()
+
+    return np.array(state_history), np.array(count_history), np.array(state_ids)
 
     if done:
         return sum_rewards_per_episode[-2], num_episodes
@@ -401,9 +409,9 @@ def train_tabular_with_e_learning(env, model, e_model,
             else:
                 e_loss = 0
 
-
             if t > learning_starts_in_steps and t % update_freq_in_steps == 0:
                 target_model = copy.deepcopy(model)
+
             if t > learning_starts_in_steps and t % e_update_freq_in_steps == 0:
                 target_e_model = copy.deepcopy(e_model)
 
@@ -436,6 +444,7 @@ def train_tabular_with_e_learning(env, model, e_model,
                 break
     torch.save(e_model, 'e_model')
     plot_corr_hist(corr_coefs)
+    np.save('corr_coefs', np.array(corr_coefs))
     return sum_rewards_per_episode[-2], num_episodes
 
 
@@ -506,6 +515,7 @@ def train(env, model,
     sum_rewards_per_episode = [0]
     list_rewards_per_episode = [[]]
     state_history = []
+    count_history = []
     state = env.reset()
     break_flag=False
 
@@ -518,7 +528,6 @@ def train(env, model,
 
         sum_rewards_per_episode[-1] += rew
         list_rewards_per_episode[-1].append(rew)
-        state_history.append(state)
         if done:
             print('DONE')
             print(state, next_state)

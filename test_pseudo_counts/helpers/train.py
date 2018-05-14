@@ -5,7 +5,10 @@ from helpers.convert_to_var_foo import convert_to_var
 from .create_model_data import get_one_hot_object
 from .loss import loss_function
 from .plots import plot_learning_history, plot_learning_history_with_pgs
+import copy
 
+import torch
+from torch import optim
 
 def iterate_minibatches(inputs, batchsize, shuffle=True):
     if shuffle:
@@ -93,13 +96,6 @@ def train(X_train, X_test,
                           mu=mu, std=std, filename=img_name)
     return ll_log, kld_log, pgs_log
 
-"""
- fc_size=1024, num_layers=2, use_adam=True,
- n_samples=25,
- lr=0.0001, momentum=0.9, weight_decay=0,
- betas=(0.9, 0.99), eps=1e-8, centered=False,
-"""
-
 
 def train_online(schedule, X_test,
                  model, optimizer,
@@ -109,7 +105,8 @@ def train_online(schedule, X_test,
     X_test = np.array(X_test)
     num_classes, dim = X_test.shape[0], X_test.shape[1]
 
-    pgs = []
+    pgs = [[] for _ in range(num_classes)]
+    online_pgs = []
     total_loss_gains = []
     kl_gains = []
 
@@ -135,7 +132,8 @@ def train_online(schedule, X_test,
                                                                         kl_weight=kl_weight, return_loss=True)
 
         pg = log_prob_after - log_prob_before
-        pgs.append(pg)
+        pgs[cur_class].append(pg)
+        online_pgs.append(pg)
 
         loss_gain = loss_next.data.numpy()[0] - loss.data.numpy()[0]
         total_loss_gains.append(loss_gain)
@@ -144,14 +142,27 @@ def train_online(schedule, X_test,
         kl_gains.append(kld_gain)
 
         for i, obj in enumerate(X_test):
-            log_prob = get_obj_log_prob(model, obj, return_loss=False)
-            all_log_probs[i].append(log_prob)
+            if i == cur_class:
+                continue
+            copy_model = copy.deepcopy(model)
+            copy_optimizer = optim.RMSprop(copy_model.parameters())
+            copy_optimizer.load_state_dict(optimizer.state_dict())
+            log_prob_before, loss, ll, kld = get_obj_log_prob(copy_model, obj,
+                                                              kl_weight=kl_weight, return_loss=True)
+            copy_optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-    plot_learning_history_with_pgs(train_logs, pgs,
+            log_prob_after, loss_next, ll_next, kld_next = get_obj_log_prob(copy_model, obj,
+                                                                            kl_weight=kl_weight, return_loss=True)
+            pg = log_prob_after - log_prob_before
+            pgs[i].append(pg)
+
+    plot_learning_history_with_pgs(train_logs, online_pgs,
                                    alpha=alpha, red_lines=red_lines, filename=img_name)
 
-    pgs = np.array(pgs)
-    pct = (pgs < 0).mean()
+    online_pgs = np.array(online_pgs)
+    pct = (online_pgs < 0).mean()
 
     lls = np.array(train_logs[0])
     mean_last_ll = lls[-10:].mean()
