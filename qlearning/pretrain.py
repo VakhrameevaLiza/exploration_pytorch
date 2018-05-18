@@ -24,9 +24,16 @@ def pretrain(model, all_states, num_actions,
             if (2 <= i < n_states - 2) and n_states >= 10:
                 continue
             else:
-                writer.add_scalars('dqn/q_values/state_{}'.format(i + 1), {'action_right': q[i][1],
-                                                                           'action_left': q[i][0]}, t)
-        if loss.data.numpy()[0] < eps:
+                if writer is not None:
+                    writer.add_scalars('dqn/q_values/state_{}'.format(i + 1), {'action_right': q[i][1],
+                                                                               'action_left': q[i][0]}, t)
+
+        if torch.cuda.is_available():
+            loss = loss.cpu().data.numpy()[0]
+        else:
+            loss = loss.data.numpy()[0]
+            
+        if  loss < eps:
             return t
 
     return max_steps

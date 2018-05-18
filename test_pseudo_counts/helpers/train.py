@@ -31,7 +31,11 @@ def get_obj_log_prob(model, obj, kl_weight=1, return_loss=False):
     if return_loss:
         loss, ll, kld = loss_function(log_probs, v, mu, logvar,
                                       kl_weight=kl_weight, n_samples=model.n_samples)
-    log_probs = log_probs.data.numpy()[0].mean(axis=0)
+        
+    if torch.cuda.is_available():
+        log_probs = log_probs.data.cpu().numpy()[0].mean(axis=0)
+    else:
+        log_probs = log_probs.data.numpy()[0].mean(axis=0)
     log_probs = log_probs[np.arange(dim), obj.astype('int64')]
     obj_log_prob = log_probs.sum()
 
@@ -114,6 +118,8 @@ def train_online(schedule, X_test,
     all_log_probs = [[] for _ in range(len(X_test))]
 
     for t in range(len(schedule)):
+        if t % 100 == 0:
+            print('t={}'.format(t))
         model.train()
         cur_class = schedule[t]
         obj = get_one_hot_object(cur_class, dim, num_classes)
@@ -121,8 +127,12 @@ def train_online(schedule, X_test,
         log_prob_before, loss, ll, kld = get_obj_log_prob(model, obj,
                                                           kl_weight=kl_weight, return_loss=True)
 
-        train_logs[0].append(ll.data.numpy()[0])
-        train_logs[1].append(kld.data.numpy()[0])
+        if torch.cuda.is_available():
+            train_logs[0].append(ll.cpu().data.numpy()[0])
+            train_logs[1].append(kld.cpu().data.numpy()[0])
+        else:
+            train_logs[0].append(ll.data.numpy()[0])
+            train_logs[1].append(kld.data.numpy()[0])
 
         optimizer.zero_grad()
         loss.backward()
@@ -134,12 +144,20 @@ def train_online(schedule, X_test,
         pg = log_prob_after - log_prob_before
         pgs[cur_class].append(pg)
         online_pgs.append(pg)
+        
+        
+        if torch.cuda.is_available():
+            loss_gain = loss_next.cpu().data.numpy()[0] - loss.cpu().data.numpy()[0]
+            total_loss_gains.append(loss_gain)
 
-        loss_gain = loss_next.data.numpy()[0] - loss.data.numpy()[0]
-        total_loss_gains.append(loss_gain)
+            kld_gain = kld_next.cpu().data.numpy()[0] - kld.cpu().data.numpy()[0]
+            kl_gains.append(kld_gain)
+        else:
+            loss_gain = loss_next.data.numpy()[0] - loss.data.numpy()[0]
+            total_loss_gains.append(loss_gain)
 
-        kld_gain = kld_next.data.numpy()[0] - kld.data.numpy()[0]
-        kl_gains.append(kld_gain)
+            kld_gain = kld_next.data.numpy()[0] - kld.data.numpy()[0]
+            kl_gains.append(kld_gain)
 
         for i, obj in enumerate(X_test):
             if i == cur_class:
@@ -167,7 +185,7 @@ def train_online(schedule, X_test,
     lls = np.array(train_logs[0])
     mean_last_ll = lls[-10:].mean()
 
-    return mean_last_ll, pct, all_log_probs, pgs, total_loss_gains, kl_gains
+    return mean_last_ll, pct, all_log_probs, online_pgs, total_loss_gains, kl_gains
 
 
 def train_online_alternately(schedule, X_test,

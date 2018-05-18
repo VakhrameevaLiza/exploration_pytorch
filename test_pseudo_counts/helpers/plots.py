@@ -2,6 +2,12 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import numpy as np
 
+from matplotlib import rc
+
+font = {'family': 'Verdana',
+        'weight': 'normal'}
+rc('font', **font)
+
 from .get_pseudo_counters import get_counters
 
 colors = ['red', 'green', 'blue', 'orange', 'pink']
@@ -18,7 +24,7 @@ def smooth(arr, alpha):
 
 
 def plot_learning_history_with_pgs(logs, pgs,
-                                   title='online training',
+                                   title='Онлайн обучение',
                                    smooth_pg=True, alpha=0.1,
                                    red_lines=[], filename=None):
     ll_log, kld_log = logs[0], logs[1]
@@ -33,18 +39,18 @@ def plot_learning_history_with_pgs(logs, pgs,
     plt.plot(ll_log)
     for line in red_lines:
         plt.axvline(x=line, color='red', linewidth=1)
-    plt.title('Log-Likelihood ({})'.format(title), fontsize=15)
-    plt.ylabel('LL', fontsize=15)
-    plt.xlabel('steps', fontsize=15)
+    plt.title('Лог-Правдоподобие ({})'.format(title), fontsize=15)
+    plt.ylabel('Лог-Правдоподобие', fontsize=15)
+    plt.xlabel('шаги обучения', fontsize=15)
     plt.grid()
     
     plt.subplot(1, num_plots, 2)
     plt.plot(kld_log)
     for line in red_lines:
         plt.axvline(x=line, color='red', linewidth=1)
-    plt.title('KL-divergence ({})'.format(title), fontsize=15)
-    plt.ylabel('KL', fontsize=15)
-    plt.xlabel('steps', fontsize=15)
+    plt.title('KL-дивергенция ({})'.format(title), fontsize=15)
+    plt.ylabel('KL-дивергенция', fontsize=15)
+    plt.xlabel('шаги обучения', fontsize=15)
     plt.grid()
 
     if smooth_pg:
@@ -54,9 +60,9 @@ def plot_learning_history_with_pgs(logs, pgs,
             plt.axvline(x=line, color='red', linewidth=1)
         plt.axhline(y=0, color='r', linewidth=2)
         plt.ylim(-2, 10)
-        plt.title('Prediction gains ({})'.format(title), fontsize=15)
+        plt.title('Прирост лог-правдоподобия({})'.format(title), fontsize=15)
         plt.ylabel('PG', fontsize=15)
-        plt.xlabel('steps', fontsize=15)
+        plt.xlabel('шаги обучения', fontsize=15)
         plt.grid()
         plt.legend(loc='upper right')
         non_smothed_id = 4
@@ -69,9 +75,9 @@ def plot_learning_history_with_pgs(logs, pgs,
         plt.axvline(x=line, color='red', linewidth=1)
     plt.axhline(y=0, color='r', linewidth=2)
     plt.ylim(-2, 10)
-    plt.title('Prediction gains ({})'.format(title), fontsize=15)
+    plt.title('Прирост лог-правдоподобия({})'.format(title), fontsize=15)
     plt.ylabel('PG', fontsize=15)
-    plt.xlabel('steps', fontsize=15)
+    plt.xlabel('шаги обучения', fontsize=15)
     plt.grid()
     
     if filename is not None:
@@ -79,7 +85,7 @@ def plot_learning_history_with_pgs(logs, pgs,
         plt.close()
         
 
-def plot_learning_history(logs, mu=None, std=None, title='batch training', filename=None):
+def plot_learning_history(logs, mu=None, std=None, title='Обучение по батчам', filename=None):
     
     ll_log, kld_log = logs[0], logs[1]
     n_plots = 2 if mu is None else 3
@@ -88,16 +94,16 @@ def plot_learning_history(logs, mu=None, std=None, title='batch training', filen
 
     plt.subplot(1, n_plots, 1)
     plt.plot(ll_log)
-    plt.title('Log-Likelihood ({})'.format(title), fontsize=15)
-    plt.ylabel('LL', fontsize=15)
-    plt.xlabel('steps', fontsize=15)
+    plt.title('Лог-правдоподобие ({})'.format(title), fontsize=15)
+    plt.ylabel('Лог-правдоподобие', fontsize=15)
+    plt.xlabel('шаги обучения', fontsize=15)
     plt.grid()
     
     plt.subplot(1, n_plots, 2)
     plt.plot(kld_log)
-    plt.title('KL-divergence ({})'.format(title), fontsize=15)
-    plt.ylabel('KL', fontsize=15)
-    plt.xlabel('steps', fontsize=15)
+    plt.title('KL-дивергенция ({})'.format(title), fontsize=15)
+    plt.ylabel('KL-дивергенция', fontsize=15)
+    plt.xlabel('шаги обучения', fontsize=15)
     plt.grid()
 
     if mu is not None and std is not None:
@@ -118,7 +124,7 @@ def plot_learning_history(logs, mu=None, std=None, title='batch training', filen
                      color=colors[i], alpha=0.8, label='class {}'.format(int(i+1)))
         plt.legend(loc='lower right')
         plt.grid()
-        plt.title('Latent variable distributions', fontsize=16)
+        plt.title('Распределение скрытых переменных', fontsize=16)
         plt.xlim((-4,4))
         plt.ylim((-4,4))    
     
@@ -127,7 +133,7 @@ def plot_learning_history(logs, mu=None, std=None, title='batch training', filen
         plt.close()
 
 
-def plot_point_with_std(mu, std, title='Latent variable distributions'):
+def plot_point_with_std(mu, std, title='Распределение скрытых переменных'):
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, aspect='equal')
 

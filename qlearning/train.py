@@ -79,26 +79,29 @@ def train_tabular(env, model,
     dim_states = env.observation_space.shape[0]
     n_all_states = env.get_all_states().shape[0]
 
-    create_empty_directory(log_dir)
-    tensorboard_directory = log_dir + '/tensorboard_logs'
-    images_directory = log_dir + '/images_logs'
-    descr_file_name = log_dir + '/parameters.csv'
+    if write_logs:
+        create_empty_directory(log_dir)
+        tensorboard_directory = log_dir + '/tensorboard_logs'
+        images_directory = log_dir + '/images_logs'
+        descr_file_name = log_dir + '/parameters.csv'
 
-    with open(descr_file_name,'w') as file:
-        file.write('dim_states: {}\n'.format(dim_states))
-        file.write('seed: {}\n'.format(seed))
-        file.write('action selection type: {}\n'.format(act_type))
-        file.write('target q-function type: {}\n'.format(target_type))
-        file.write('reward addition type: {}\n'.format(reward_shaping_type))
-        file.write('Without epsilon: {}\n'.format(True if eps_params is None else False))
-        file.write('count-based exploration type (rewards in exploration model): {}\n'.format(count_based_exploration_type))
+        with open(descr_file_name,'w') as file:
+            file.write('dim_states: {}\n'.format(dim_states))
+            file.write('seed: {}\n'.format(seed))
+            file.write('action selection type: {}\n'.format(act_type))
+            file.write('target q-function type: {}\n'.format(target_type))
+            file.write('reward addition type: {}\n'.format(reward_shaping_type))
+            file.write('Without epsilon: {}\n'.format(True if eps_params is None else False))
+            file.write('count-based exploration type (rewards in exploration model): \{}\n'.format(count_based_exploration_type))
 
-    # create empty directories for writing logs
-    create_empty_directory(images_directory)
-    create_empty_directory(tensorboard_directory)
+            # create empty directories for writing logs
+            create_empty_directory(images_directory)
+            create_empty_directory(tensorboard_directory)
 
-    # create a summary writer
-    writer = SummaryWriter(tensorboard_directory)
+            # create a summary writer
+            writer = SummaryWriter(tensorboard_directory)
+    else:
+        writer = None
 
     # define models
     if do_pretraining:
@@ -211,8 +214,6 @@ def train_tabular(env, model,
             sum_rewards_per_episode.append(0)
             list_rewards_per_episode.append([])
             state = env.reset()
-
-    return np.array(state_history), np.array(count_history), np.array(state_ids)
 
     if done:
         return sum_rewards_per_episode[-2], num_episodes

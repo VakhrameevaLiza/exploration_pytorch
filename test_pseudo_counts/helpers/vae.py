@@ -1,7 +1,7 @@
 import numpy as np
 from torch import nn
 from torch.nn import functional as F
-
+import torch
 from helpers.convert_to_var_foo import convert_to_var
 
 
@@ -26,8 +26,15 @@ class VAE(nn.Module):
             encoder_layers.append(nn.ReLU())
         self.encoder = nn.Sequential(*encoder_layers)
 
+        if torch.cuda.is_available():
+            self.encoder = self.encoder.cuda()
+
         self.fc_mu = nn.Linear(fc_size // 2 ** (num_layers - 1), latent_dim)
         self.fc_logvar = nn.Linear(fc_size // 2 ** (num_layers - 1), latent_dim)
+
+        if torch.cuda.is_available():
+            self.fc_mu = self.fc_mu.cuda()
+            self.fc_logvar = self.fc_logvar.cuda()
 
         decoder_layers = []
         decoder_layers.append(nn.Linear(latent_dim, fc_size // 2 ** (num_layers - 1)))
@@ -38,6 +45,8 @@ class VAE(nn.Module):
             decoder_layers.append(nn.ReLU())
         decoder_layers.append(nn.Linear(fc_size, 2 * input_shape[1]))
         self.decoder = nn.Sequential(*decoder_layers)
+        if torch.cuda.is_available():
+            self.decoder = self.decoder.cuda()
 
     def encode(self, x):
         enc_out = self.encoder(x)
