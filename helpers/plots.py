@@ -161,8 +161,8 @@ def plot_q_func_and_visitations_and_policy(total_states_cnt, episode_state_actio
 def plot_corr_hist(corr):
     fontsize = 20
     plt.hist(corr, bins=20)
-    plt.xlabel("Pearson's correlation coefficient", fontsize=fontsize)
-    plt.ylabel("Number of episodes", fontsize=fontsize)
-    plt.title("Correlation between E-counters and empirical counters", fontsize=fontsize)
+    plt.xlabel("Коэффициент корреляции Пирсона", fontsize=fontsize)
+    plt.ylabel("Количество эпизодов", fontsize=fontsize)
+    plt.title("Корреляция между E-счетчиками и эмпирическими счетчиками", fontsize=fontsize)
     plt.grid()
     plt.show()

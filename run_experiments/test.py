@@ -34,7 +34,7 @@ if __name__ == "__main__":
                                                        batch_size=256,
                                                        learning_starts_in_steps=100 ,
                                                        max_steps=(dim+9)*max_num_episodes,
-                                                       max_num_episodes=400,
+                                                       max_num_episodes=200,
                                                        train_freq_in_steps=5,
                                                        update_freq_in_steps=50,
                                                        print_freq=1,
